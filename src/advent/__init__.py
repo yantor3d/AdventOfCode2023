@@ -23,8 +23,6 @@ def solve(
         tuple
     """
 
-    print()
-
     args = get_puzzle_input(day, source)
 
     st = time.time()
