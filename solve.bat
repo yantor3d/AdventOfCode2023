@@ -1,0 +1,1 @@
+venv\Scripts\python.exe -b src\advent %1
