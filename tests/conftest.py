@@ -8,8 +8,13 @@ import advent
 
 
 @pytest.fixture(scope="function")
-def get_example_input() -> callable:
+def test_source():
+    return r"tests\_data"
+
+
+@pytest.fixture(scope="function")
+def get_example_input(test_source) -> callable:
     def fn(day: int) -> List[str]:
-        return advent.get_puzzle_input(day, r"tests\data")
+        return advent.get_puzzle_input(day, test_source)
 
     return fn
