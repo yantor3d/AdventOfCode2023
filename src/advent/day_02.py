@@ -26,6 +26,12 @@ def part_01(puzzle_input):
 def part_02(puzzle_input):
     """Solve part two."""
 
+    games = map(get_results, puzzle_input)
+    cubes_sets = map(fewest_cubes_for_game, games)
+    powers = map(power_of, cubes_sets)
+
+    return sum(powers)
+
 
 def get_results(line: str) -> Game:
     """Return the results of the given game."""
@@ -49,6 +55,18 @@ def get_result(draw: str) -> Cubes:
     return Cubes(**result)
 
 
+def fewest_cubes_for_game(game: Game) -> Cubes:
+    """Return the fewest cubes required to play the game."""
+
+    result = Cubes(0, 0, 0)._asdict()
+
+    for draw in game.draws:
+        for color, value in draw._asdict().items():
+            result[color] = max(result[color], value)
+
+    return Cubes(**result)
+
+
 def is_game_possible(game: Game, cubes: Cubes) -> bool:
     """Return True if the given game is possible."""
 
@@ -65,3 +83,9 @@ def is_draw_possible(draw: Cubes, cubes: Cubes) -> bool:
             draw.green <= cubes.green,
         ]
     )
+
+
+def power_of(cubes: Cubes) -> int:
+    """Return the power of the given set of cubes."""
+
+    return cubes.red * cubes.green * cubes.blue
