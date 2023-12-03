@@ -24,7 +24,7 @@ def puzzle_input():
 def test_parse_part_01(puzzle_input):
     numbers = advent.day_03.parse_01(puzzle_input)
 
-    assert numbers == [467, 35, 633, 617, 592, 755, 664, 598]
+    assert numbers == sorted([467, 35, 633, 617, 592, 755, 664, 598])
 
 
 def test_part_01(puzzle_input):

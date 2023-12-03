@@ -3,26 +3,26 @@
 import collections
 import uuid
 
-from typing import Dict, Set
+from typing import Dict, Iterator, List, Tuple
 
 
 class PartNumber(object):
     """Engine schematic part number."""
 
-    def __init__(self, value=0, indexes=None):
+    def __init__(self, value: int = 0, indexes: List[int] = None):
         """Initialize."""
 
         self.indexes = indexes or []
         self.value = value
         self._id = uuid.uuid4().hex
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return a repr of this number."""
 
         return f"{self.__class__.__name__}(value={self.value}, indexes={self.indexes})"
 
 
-def part_01(puzzle_input):
+def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
     part_numbers = parse_01(puzzle_input)
@@ -30,7 +30,7 @@ def part_01(puzzle_input):
     return sum(part_numbers)
 
 
-def part_02(puzzle_input):
+def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
     part_numbers = parse_02(puzzle_input)
@@ -39,8 +39,8 @@ def part_02(puzzle_input):
     return sum(gear_ratios)
 
 
-def parse_01(lines):
-    """Find the numbers adjacent to a symbol in the given lines."""
+def parse(lines: List[str]) -> Tuple[Dict, Dict]:
+    """Parse the puzzle input."""
 
     numbers = {}
     symbols = {}
@@ -56,27 +56,27 @@ def parse_01(lines):
             else:
                 symbols[(y, x)] = char
 
-    return find_part_numbers(numbers, symbols)
+    return numbers, symbols
 
 
-def parse_02(lines):
+def parse_01(lines: List[str]) -> List[int]:
+    """Find the numbers adjacent to a symbol in the given lines."""
+
+    numbers, symbols = parse(lines)
+
+    part_numbers = find_part_numbers(numbers, symbols)
+
+    results = collections.ChainMap(*(parts for parts in part_numbers.values()))
+
+    return list(sorted(results.values()))
+
+
+def parse_02(lines: List[str]) -> List[Tuple[int, int]]:
     """Find pairs of numbers adjcent to a gear (*) symbol."""
 
-    numbers = {}
-    gears = {}
+    numbers, symbols = parse(lines)
 
-    for y, line in enumerate(lines):
-        numbers.update(find_numbers(line, y))
-
-        for x, char in enumerate(line):
-            if char == ".":
-                continue
-            elif str.isdigit(char):
-                continue
-            elif char == "*":
-                gears[(y, x)] = char
-
-    return find_gears(numbers, gears)
+    return find_gears(numbers, symbols)
 
 
 def find_numbers(line: str, y: int) -> Dict:
@@ -100,11 +100,10 @@ def find_numbers(line: str, y: int) -> Dict:
     return result
 
 
-def find_part_numbers(numbers: Dict, symbols: Dict) -> Set[int]:
-    """Return the part numbers (numbers adjacent to a symbol)."""
+def find_part_numbers(numbers: Dict, symbols: Dict) -> Dict:
+    """Return the part numbers adjacent to a symbol."""
 
-    results = []
-    seen = set()
+    results = collections.defaultdict(dict)
 
     for (y, x), number in sorted(numbers.items()):
         for key in adjacent(y, x):
@@ -113,38 +112,25 @@ def find_part_numbers(numbers: Dict, symbols: Dict) -> Set[int]:
             except KeyError:
                 continue
             else:
-                if number._id not in seen:
-                    seen.add(number._id)
-                    results.append(number.value)
-                    break
+                results[key][number._id] = number.value
 
     return results
 
 
-def find_gears(numbers: Dict, symbols: Dict):
+def find_gears(numbers: Dict, symbols: Dict) -> List[Tuple[int, int]]:
     """Return part number pairs adjacent to a gear (*) symbol."""
 
-    gears = collections.defaultdict(dict)
-
-    for (y, x), number in sorted(numbers.items()):
-        for key in adjacent(y, x):
-            try:
-                symbols[key]
-            except KeyError:
-                continue
-            else:
-                gears[key][number._id] = number.value
-
     results = []
+    part_numbers = find_part_numbers(numbers, symbols)
 
-    for __, parts in sorted(gears.items()):
-        if len(parts) == 2:
+    for key, parts in sorted(part_numbers.items()):
+        if symbols[key] == "*" and len(parts) == 2:
             results.append(tuple(parts.values()))
 
     return results
 
 
-def adjacent(y: int, x: int):
+def adjacent(y: int, x: int) -> Iterator[Tuple[int, int]]:
     """Yield the cells adjacent to the given coordinates."""
 
     for dy in [-1, 0, 1]:
