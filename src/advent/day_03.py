@@ -1,5 +1,6 @@
 """Advent of Code 2023, Day 03."""
 
+import collections
 import uuid
 
 from typing import Dict, Set
@@ -32,6 +33,11 @@ def part_01(puzzle_input):
 def part_02(puzzle_input):
     """Solve part two."""
 
+    part_numbers = parse_02(puzzle_input)
+    gear_ratios = [a * b for a, b in part_numbers]
+
+    return sum(gear_ratios)
+
 
 def parse_01(lines):
     """Find the numbers adjacent to a symbol in the given lines."""
@@ -51,6 +57,26 @@ def parse_01(lines):
                 symbols[(y, x)] = char
 
     return find_part_numbers(numbers, symbols)
+
+
+def parse_02(lines):
+    """Find pairs of numbers adjcent to a gear (*) symbol."""
+
+    numbers = {}
+    gears = {}
+
+    for y, line in enumerate(lines):
+        numbers.update(find_numbers(line, y))
+
+        for x, char in enumerate(line):
+            if char == ".":
+                continue
+            elif str.isdigit(char):
+                continue
+            elif char == "*":
+                gears[(y, x)] = char
+
+    return find_gears(numbers, gears)
 
 
 def find_numbers(line: str, y: int) -> Dict:
@@ -91,6 +117,29 @@ def find_part_numbers(numbers: Dict, symbols: Dict) -> Set[int]:
                     seen.add(number._id)
                     results.append(number.value)
                     break
+
+    return results
+
+
+def find_gears(numbers: Dict, symbols: Dict):
+    """Return part number pairs adjacent to a gear (*) symbol."""
+
+    gears = collections.defaultdict(dict)
+
+    for (y, x), number in sorted(numbers.items()):
+        for key in adjacent(y, x):
+            try:
+                symbols[key]
+            except KeyError:
+                continue
+            else:
+                gears[key][number._id] = number.value
+
+    results = []
+
+    for __, parts in sorted(gears.items()):
+        if len(parts) == 2:
+            results.append(tuple(parts.values()))
 
     return results
 

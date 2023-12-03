@@ -31,3 +31,15 @@ def test_part_01(puzzle_input):
     answer = advent.day_03.part_01(puzzle_input)
 
     assert answer == 4361
+
+
+def test_parse_part_02(puzzle_input):
+    gears = advent.day_03.parse_02(puzzle_input)
+
+    assert gears == [(467, 35), (755, 598)]
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_03.part_02(puzzle_input)
+
+    assert answer == 467835
