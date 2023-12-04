@@ -56,18 +56,17 @@ def part_02(puzzle_input: List[str]) -> int:
     cards = list(map(parse, puzzle_input))
     rewards = {card.number: card.rewards() for card in cards}
 
-    plays = collections.deque()
+    this_stack = collections.Counter(rewards.keys())
+    next_stack = collections.Counter()
 
-    for card in cards:
-        plays.append(card.number)
+    while this_stack:
+        for card_number, count in sorted(this_stack.items()):
+            n += count
 
-    while plays:
-        card_number = plays.popleft()
+            for reward in rewards.get(card_number, []):
+                next_stack[reward] += count
 
-        n += 1
-
-        for x in rewards.get(card_number, []):
-            plays.append(x)
+        this_stack, next_stack = next_stack, collections.Counter()
 
     return n
 
