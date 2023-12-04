@@ -1,5 +1,6 @@
 """Advent of Code 2023, Day 04."""
 
+import collections
 import operator
 
 from typing import List
@@ -8,13 +9,21 @@ from typing import List
 class Card(object):
     """Lottory scratch card."""
 
-    def __init__(self, drawing_numbers: List[int], winning_numbers: List[int]):
+    def __init__(self, number: int, drawing_numbers: List[int], winning_numbers: List[int]):
         """Initialize."""
 
+        self.number = number
         self.drawing_numbers = drawing_numbers
         self.winning_numbers = winning_numbers
 
-    def score(self):
+    def rewards(self) -> List[int]:
+        """Return the rewards (card numbers) for this card."""
+
+        matches = [n for n in self.drawing_numbers if n in self.winning_numbers]
+
+        return [self.number + i for i in range(1, len(matches) + 1)]
+
+    def score(self) -> int:
         """Return the score of this card."""
 
         matches = [n for n in self.drawing_numbers if n in self.winning_numbers]
@@ -30,16 +39,40 @@ class Card(object):
         return n
 
 
-def part_01(puzzle_input):
+def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
-    cards = map(parse_01, puzzle_input)
+    cards = map(parse, puzzle_input)
     scores = map(operator.methodcaller("score"), cards)
 
     return sum(scores)
 
 
-def parse_01(line: str) -> Card:
+def part_02(puzzle_input: List[str]) -> int:
+    """Solve part two."""
+
+    n = 0
+
+    cards = list(map(parse, puzzle_input))
+    rewards = {card.number: card.rewards() for card in cards}
+
+    plays = collections.deque()
+
+    for card in cards:
+        plays.append(card.number)
+
+    while plays:
+        card_number = plays.popleft()
+
+        n += 1
+
+        for x in rewards.get(card_number, []):
+            plays.append(x)
+
+    return n
+
+
+def parse(line: str) -> Card:
     """Parse the puzzle input for part one."""
 
     card_num, numbers = line.split(":")
@@ -50,14 +83,10 @@ def parse_01(line: str) -> Card:
     drawing_numbers = parse_numbers(drawing)
     winning_numbers = parse_numbers(winning)
 
-    return Card(drawing_numbers, winning_numbers)
+    return Card(card_num, drawing_numbers, winning_numbers)
 
 
 def parse_numbers(fragment: str) -> List[int]:
     """Parse the numbers in the given string."""
 
     return [int(n) for n in fragment.strip().split()]
-
-
-def part_02(puzzle_input):
-    """Solve part two."""

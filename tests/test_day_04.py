@@ -28,6 +28,7 @@ def puzzle_input():
         (LINES[2], 2),
         (LINES[3], 1),
         (LINES[4], 0),
+        (LINES[5], 0),
     ],
     ids=[
         "Card 1",
@@ -35,10 +36,11 @@ def puzzle_input():
         "Card 3",
         "Card 4",
         "Card 5",
+        "Card 6",
     ],
 )
 def test_part_01_lines(line, expected):
-    card = advent.day_04.parse_01(line)
+    card = advent.day_04.parse(line)
 
     assert card.score() == expected, line
 
@@ -47,3 +49,34 @@ def test_part_01(puzzle_input):
     answer = advent.day_04.part_01(puzzle_input)
 
     assert answer == 13
+
+
+@pytest.mark.parametrize(
+    "line,expected",
+    [
+        (LINES[0], [2, 3, 4, 5]),
+        (LINES[1], [3, 4]),
+        (LINES[2], [4, 5]),
+        (LINES[3], [5]),
+        (LINES[4], []),
+        (LINES[5], []),
+    ],
+    ids=[
+        "Card 1",
+        "Card 2",
+        "Card 3",
+        "Card 4",
+        "Card 5",
+        "Card 6",
+    ],
+)
+def test_part_02_lines(line, expected):
+    card = advent.day_04.parse(line)
+
+    assert card.rewards() == expected, line
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_04.part_02(puzzle_input)
+
+    assert answer == 30
