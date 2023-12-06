@@ -1,6 +1,8 @@
 """Advent of Code 2023, Day 06."""
 
-from typing import Dict, Iterator, List
+import sys
+
+from typing import Dict, List, Tuple
 
 
 def part_01(puzzle_input: List[str]) -> int:
@@ -8,12 +10,12 @@ def part_01(puzzle_input: List[str]) -> int:
 
     result = 1
 
-    races = parse(puzzle_input)
+    races = parse_01(puzzle_input)
 
     for duration, record in sorted(races.items()):
-        wins = win(duration, record)
+        mn, mx = win(duration, record)
 
-        result *= len(wins)
+        result *= num_wins(mn, mx)
 
     return result
 
@@ -21,22 +23,48 @@ def part_01(puzzle_input: List[str]) -> int:
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
+    result = 1
 
-def parse(puzzle_input: List[str]) -> Dict[int, int]:
+    races = parse_02(puzzle_input)
+
+    for duration, record in sorted(races.items()):
+        mn, mx = win(duration, record)
+
+        result *= num_wins(mn, mx)
+
+    return result
+
+
+def parse_01(puzzle_input: List[str]) -> Dict[int, int]:
     t, d = puzzle_input
 
     return dict(
         zip(
-            parse_line(t),
-            parse_line(d),
+            parse_line_01(t),
+            parse_line_01(d),
         ),
     )
 
 
-def parse_line(line: str) -> List[int]:
+def parse_02(puzzle_input: List[str]) -> Dict[int, int]:
+    t, d = puzzle_input
+
+    t = parse_line_02(t)
+    d = parse_line_02(d)
+
+    return {t: d}
+
+
+def parse_line_01(line: str) -> List[int]:
     __, values = line.split(":")
 
     return list(map(int, values.strip().split()))
+
+
+def parse_line_02(line: str) -> int:
+    __, values = line.split(":")
+
+    return int(values.replace(" ", ""))
 
 
 def run(duration: int, hold: int) -> int:
@@ -47,13 +75,19 @@ def run(duration: int, hold: int) -> int:
     return distance
 
 
-def win(duration: int, record: int) -> List[int]:
-    result = []
+def win(duration: int, record: int) -> Tuple[int, int]:
+    mn = sys.maxsize
+    mx = -1
 
     for hold in range(duration):
         distance = run(duration, hold)
 
         if distance > record:
-            result.append(hold)
+            mn = min(mn, hold)
+            mx = max(mx, hold)
 
-    return result
+    return mn, mx
+
+
+def num_wins(mn: int, mx: int) -> int:
+    return mx - mn + 1
