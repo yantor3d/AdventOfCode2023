@@ -79,12 +79,23 @@ def win(duration: int, record: int) -> Tuple[int, int]:
     mn = sys.maxsize
     mx = -1
 
-    for hold in range(duration):
+    for hold in range(0, duration, 1):
         distance = run(duration, hold)
 
         if distance > record:
             mn = min(mn, hold)
+
+        if hold > mn:
+            break
+
+    for hold in range(duration, 1, -1):
+        distance = run(duration, hold)
+
+        if distance > record:
             mx = max(mx, hold)
+
+        if hold < mx:
+            break
 
     return mn, mx
 
