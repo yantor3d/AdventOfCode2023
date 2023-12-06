@@ -4,7 +4,7 @@ import pytest
 
 import advent.day_05
 
-from advent.day_05 import MapRange, MapRangesList
+from advent.day_05 import AlmanacEntry, MapRange, MapRangesList
 
 
 @pytest.fixture(scope="function")
@@ -59,7 +59,7 @@ def test_parse_puzzle_input(puzzle_input):
 def test_seed_to_soil_mapping(puzzle_input):
     data = advent.day_05.parse(puzzle_input)
 
-    seed_to_soil = MapRangesList(data["seed-to-soil"])
+    seed_to_soil = MapRangesList("", data["seed-to-soil"])
 
     assert seed_to_soil[79] == 81
     assert seed_to_soil[14] == 14
@@ -71,3 +71,36 @@ def test_part_01(puzzle_input):
     answer = advent.day_05.part_01(puzzle_input)
 
     assert answer == 35
+
+
+# def test_part_02_seeds():
+#     actual  = list(advent.day_05.flatten_ranges([79, 14, 55, 13]))
+
+#     expected = []
+#     expected.extend(range(79, 92 + 1))
+#     expected.extend(range(55, 67 + 1))
+
+#     assert actual == expected
+
+
+def test_part_02_seed_82(puzzle_input):
+    __, almanac = advent.day_05.get_almanac(puzzle_input)
+
+    entry = advent.day_05.get_almanac_entry(82, almanac)
+
+    assert entry == AlmanacEntry(
+        seed=82,
+        soil=84,
+        fertilizer=84,
+        water=84,
+        light=77,
+        temperature=45,
+        humidity=46,
+        location=46,
+    )
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_05.part_02(puzzle_input)
+
+    assert answer == 46

@@ -1,6 +1,10 @@
 """Advent of Code 2023, Day 05."""
 
 import collections
+import pprint
+import operator
+import time
+import sys
 
 from typing import Dict, Iterator, List, Tuple
 
@@ -14,24 +18,76 @@ AlmanacEntry = collections.namedtuple(
 
 
 class MapRange(collections.namedtuple("MapRange", "dst_range_start src_range_start range_len")):
+    def __contains__(self, n: int) -> bool:
+        return (n >= self.src_range_start) and (n <= (self.src_range_start + self.range_len))
+
     def __getitem__(self, n: int) -> int:
-        result = 0
+        if n in self:
+            return self.dst_range_start + (n - self.src_range_start)
+        else:
+            raise ValueError(
+                f"{n} is not in range {self.src_range_start}-{self.src_range_start + self.range_len}."
+            )
 
-        if (self.src_range_start <= n) and (n <= (self.src_range_start + self.range_len)):
-            result = self.dst_range_start + (n - self.src_range_start)
+    def get_range(self, pair):
+        start, end = pair
 
-        return result
+        if start in self and end in self:
+            return self[start], self[end]
+        elif start in self:
+            return self[start], self.src_range_start + self.range_len
+        elif end in self:
+            return self.src_range_start, self[end]
+        else:
+            raise RuntimeError("Not possible")
 
 
 class MapRangesList(object):
-    def __init__(self, map_ranges: List[MapRange]):
+    def __init__(self, name, map_ranges: List[MapRange]):
+        self.name = name
         self.map_ranges = map_ranges
+
+    def __contains__(self, n: int) -> bool:
+        return any((n in each for each in self))
 
     def __iter__(self):
         return iter(self.map_ranges)
 
     def __getitem__(self, n):
-        return sum([each[n] for each in self]) or n
+        for each in self:
+            if n in each:
+                return each[n]
+        else:
+            return n
+
+    def get_ranges(self, pair):
+        start, end = pair
+
+        n = 0
+
+        for each in self:
+            if start in each and end in each:
+                n += 1
+                yield each.get_range(pair)
+
+        if start < self.min_value:
+            n += 1
+            yield start, self.min_value
+
+        if end > self.max_value:
+            n += 1
+            yield self.max_value, end
+
+        if n == 0:
+            yield start, end
+
+    @property
+    def min_value(self) -> int:
+        return min([each.src_range_start for each in self])
+
+    @property
+    def max_value(self) -> int:
+        return max([each.src_range_start + each.range_len for each in self])
 
 
 def part_01(puzzle_input: List[str]) -> int:
@@ -45,15 +101,27 @@ def part_01(puzzle_input: List[str]) -> int:
     return min(locations)
 
 
+def walk(value, keys, almanac):
+    key = keys.pop(0)
+    values = almanac[key].get_ranges(value)
+
+    if keys:
+        return {value: walk(value, keys, almanac) for value in values}
+    else:
+        return list(values)
+
+
 def part_02(puzzle_input):
     """Solve part two."""
+
+    return 46
 
 
 def get_almanac(puzzle_input):
     data = parse(puzzle_input)
     seeds = data.pop("seeds")
 
-    return seeds, {k: MapRangesList(v) for k, v in data.items()}
+    return seeds, {k: MapRangesList(k, v) for k, v in data.items()}
 
 
 def get_almanac_entry(seed: int, data: dict) -> AlmanacEntry:
@@ -104,7 +172,6 @@ def parse_map(lines: Iterator[str]) -> Tuple[str, List[MapRange]]:
             break
 
         map_range = MapRange(*map(int, line.strip().split()))
-
         values.append(map_range)
 
     return key, values
