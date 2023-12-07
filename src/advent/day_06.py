@@ -76,28 +76,25 @@ def run(duration: int, hold: int) -> int:
 
 
 def win(duration: int, record: int) -> Tuple[int, int]:
-    mn = sys.maxsize
-    mx = -1
+    """Return the range of hold times that beat the record."""
 
-    for hold in range(0, duration, 1):
-        distance = run(duration, hold)
+    return bsearch(duration, 0, duration, record)
 
-        if distance > record:
-            mn = min(mn, hold)
 
-        if hold > mn:
-            break
+def bsearch(duration: int, mn: int, mx: int, record: int) -> int:
+    """Find the range of hold times that beat the record."""
 
-    for hold in range(duration, 1, -1):
-        distance = run(duration, hold)
+    mid = mn + int((mx - mn) / 2)
 
-        if distance > record:
-            mx = max(mx, hold)
+    out = run(duration, mid)
+    pre = run(duration, mid - 1)
 
-        if hold < mx:
-            break
-
-    return mn, mx
+    if pre <= record and out > record:
+        return mid, duration - mid
+    elif out < record:
+        return bsearch(duration, mid, mx, record)
+    elif out > record:
+        return bsearch(duration, mn, mid, record)
 
 
 def num_wins(mn: int, mx: int) -> int:
