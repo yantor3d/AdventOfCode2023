@@ -1,6 +1,8 @@
 """Advent of Code 2023, Day 08."""
 
+import collections
 import itertools
+import math
 import re
 
 from typing import Dict, List, Tuple
@@ -33,6 +35,47 @@ def part_01(puzzle_input: List[str]) -> int:
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
+
+    result = 0
+
+    turns, tree = parse(puzzle_input)
+
+    starts = [each for each in tree if each.endswith("A")]
+    ends = [each for each in tree if each.endswith("Z")]
+
+    old_nodes = [None] * len(starts)
+    new_nodes = starts[:]
+
+    turns = itertools.cycle(turns)
+    turn = next(turns)
+
+    at_end = [0] * len(starts)
+
+    while True:
+        result += 1
+        old_nodes, new_nodes = next_02(tree, turn, old_nodes, new_nodes)
+
+        for i, node in enumerate(new_nodes):
+            if node in ends:
+                at_end[i] = result
+
+        if all(at_end):
+            break
+
+        turn = next(turns)
+
+    (gcd,) = {math.gcd(a, b) for a, b in itertools.combinations(at_end, 2)}
+    factors = [end // gcd for end in at_end]
+
+    return gcd * math.prod(factors)
+
+
+def next_02(tree: Dict, turn: str, old_nodes: List[str], new_nodes: List[str]) -> List[str]:
+    for i, old in enumerate(new_nodes):
+        new = tree[old][turn]
+        old_nodes[i], new_nodes[i] = old, new
+
+    return old_nodes, new_nodes
 
 
 def parse(puzzle_input: List[str]) -> Tuple[List[str], Dict]:
