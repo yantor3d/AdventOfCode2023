@@ -1,51 +1,64 @@
 """Advent of Code 2023, Day 05."""
 
 import collections
-import pprint
 import operator
-import time
 import sys
 
 from typing import Dict, Iterator, List, Tuple
 
-# TODO:
-# Impl MapRange.__getitem__(int) -> int, raises IndexError if out of bounds
-# Impl MapRangeList.__getitem__(int) -> int
 
-AlmanacEntry = collections.namedtuple(
-    "AlmanacEntry", "seed soil fertilizer water light temperature humidity location"
-)
-
-
-class MapRange(collections.namedtuple("MapRange", "dst_range_start src_range_start range_len")):
+class Range(collections.namedtuple("Range", "start end")):
     def __contains__(self, n: int) -> bool:
-        return (n >= self.src_range_start) and (n <= (self.src_range_start + self.range_len))
+        if isinstance(n, int):
+            return n >= self.start and n <= self.end
+        elif isinstance(n, MapRange):
+            return n.src in self
+        elif isinstance(n, Range):
+            return n.start in self and n.end in self
+        else:
+            raise TypeError(type(n).__name__)
+
+    def __lt__(self, mr) -> bool:
+        return self.start < mr.src.start and self.end < mr.src.start
+
+    def __le__(self, mr) -> bool:
+        return self.start < mr.src.start and self.end in mr.src
+
+    def __ge__(self, mr) -> bool:
+        return self.start in mr.src and self.end > mr.src.end
+
+    def __gt__(self, mr) -> bool:
+        return self.start > mr.src.end and self.end > mr.src.end
+
+
+class MapRange(collections.namedtuple("MapRange", "src dst")):
+    def __contains__(self, n: int) -> bool:
+        if isinstance(n, int):
+            return n in self.src
+        elif isinstance(n, Range):
+            return (n.start in self.src) and (n.end in self.src)
+        else:
+            raise TypeError(type(n).__name__)
 
     def __getitem__(self, n: int) -> int:
         if n in self:
-            return self.dst_range_start + (n - self.src_range_start)
+            return self.dst.start + (n - self.src.start)
         else:
-            raise ValueError(
-                f"{n} is not in range {self.src_range_start}-{self.src_range_start + self.range_len}."
-            )
+            raise ValueError(f"{n} is not in range {self.src.start}-{self.src.end}.")
 
-    def get_range(self, pair):
-        start, end = pair
-
-        if start in self and end in self:
-            return self[start], self[end]
-        elif start in self:
-            return self[start], self.src_range_start + self.range_len
-        elif end in self:
-            return self.src_range_start, self[end]
-        else:
-            raise RuntimeError("Not possible")
+    @classmethod
+    def from_spec(cls, dst_range_start, src_range_start, range_len):
+        return cls(
+            Range(src_range_start, src_range_start + range_len - 1),
+            Range(dst_range_start, dst_range_start + range_len - 1),
+        )
 
 
 class MapRangesList(object):
     def __init__(self, name, map_ranges: List[MapRange]):
         self.name = name
-        self.map_ranges = map_ranges
+        self.map_ranges = map_ranges[:]
+        self.map_ranges.sort(key=lambda mr: mr.src.start)
 
     def __contains__(self, n: int) -> bool:
         return any((n in each for each in self))
@@ -60,45 +73,22 @@ class MapRangesList(object):
         else:
             return n
 
-    def get_ranges(self, pair):
-        start, end = pair
-
-        n = 0
-
-        for each in self:
-            if start in each and end in each:
-                n += 1
-                yield each.get_range(pair)
-
-        if start < self.min_value:
-            n += 1
-            yield start, self.min_value
-
-        if end > self.max_value:
-            n += 1
-            yield self.max_value, end
-
-        if n == 0:
-            yield start, end
-
-    @property
-    def min_value(self) -> int:
-        return min([each.src_range_start for each in self])
-
-    @property
-    def max_value(self) -> int:
-        return max([each.src_range_start + each.range_len for each in self])
-
 
 def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
-    seeds, almanac = get_almanac(puzzle_input)
+    result = sys.maxsize
 
-    entry_list = [get_almanac_entry(seed, almanac) for seed in seeds]
-    locations = [each.location for each in entry_list]
+    seeds, almanac = get_data(puzzle_input)
 
-    return min(locations)
+    src_ranges = [Range(s, s) for s in seeds]
+    src_ranges.sort(key=operator.attrgetter("start"))
+
+    for __, map_ranges in almanac.items():
+        src_ranges = remap(src_ranges, map_ranges)
+        result = min([r.start for r in src_ranges])
+
+    return result
 
 
 def walk(value, keys, almanac):
@@ -114,28 +104,101 @@ def walk(value, keys, almanac):
 def part_02(puzzle_input):
     """Solve part two."""
 
-    return 46
+    result = sys.maxsize
+
+    seeds, almanac = get_data(puzzle_input)
+
+    src_ranges = [Range(s, s + e) for s, e in zip(seeds[::2], seeds[1::2])]
+    src_ranges.sort(key=operator.attrgetter("start"))
+
+    for __, map_ranges in almanac.items():
+        src_ranges = remap(src_ranges, map_ranges)
+        result = min([r.start for r in src_ranges])
+
+    return result
 
 
-def get_almanac(puzzle_input):
+def remap(src_ranges: List[Range], map_ranges: List[MapRange]) -> List[Range]:
+    """Return the remapped values of the given src ranges."""
+
+    src_ranges = collections.deque(src_ranges)
+    dst_ranges = []
+
+    while src_ranges:
+        src_range = src_ranges.popleft()
+
+        found = False
+
+        for map_range in map_ranges:
+            if src_range < map_range:
+                pass
+            elif src_range <= map_range:
+                dst_ranges.append(
+                    Range(
+                        src_range.start,
+                        map_range.src.start - 1,
+                    )
+                )
+
+                src_ranges.append(
+                    Range(
+                        map_range.src.start,
+                        src_range.end,
+                    )
+                )
+
+                found = True
+            elif src_range in map_range:
+                dst_ranges.append(
+                    Range(
+                        map_range[src_range.start],
+                        map_range[src_range.end],
+                    )
+                )
+
+                found = True
+            elif src_range >= map_range:
+                dst_ranges.append(
+                    Range(
+                        map_range[src_range.start],
+                        map_range.dst.end,
+                    )
+                )
+
+                src_ranges.append(
+                    Range(
+                        map_range.src.end + 1,
+                        src_range.end,
+                    )
+                )
+                found = True
+            elif src_range > map_range:
+                pass
+            elif map_range in src_range:
+                dst_ranges.append(
+                    Range(
+                        map_range.dst.start,
+                        map_range.dst.end,
+                    )
+                )
+                found = True
+
+            if found:
+                break
+
+        if not found:
+            dst_ranges.append(src_range)
+
+    dst_ranges.sort(key=operator.attrgetter("start"))
+
+    return dst_ranges
+
+
+def get_data(puzzle_input) -> Tuple[List[str], Dict[str, MapRangesList]]:
     data = parse(puzzle_input)
     seeds = data.pop("seeds")
 
     return seeds, {k: MapRangesList(k, v) for k, v in data.items()}
-
-
-def get_almanac_entry(seed: int, data: dict) -> AlmanacEntry:
-    """Return the AlmanacEntry for the given seed."""
-
-    soil = data["seed-to-soil"][seed]
-    fertilizer = data["soil-to-fertilizer"][soil]
-    water = data["fertilizer-to-water"][fertilizer]
-    light = data["water-to-light"][water]
-    temp = data["light-to-temperature"][light]
-    humidity = data["temperature-to-humidity"][temp]
-    location = data["humidity-to-location"][humidity]
-
-    return AlmanacEntry(seed, soil, fertilizer, water, light, temp, humidity, location)
 
 
 def parse(puzzle_input: List[str]) -> Dict:
@@ -171,7 +234,7 @@ def parse_map(lines: Iterator[str]) -> Tuple[str, List[MapRange]]:
         if not line:
             break
 
-        map_range = MapRange(*map(int, line.strip().split()))
+        map_range = MapRange.from_spec(*map(int, line.strip().split()))
         values.append(map_range)
 
     return key, values
