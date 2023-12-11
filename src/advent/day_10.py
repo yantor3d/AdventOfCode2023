@@ -1,18 +1,13 @@
 """Advent of Code 2023, Day 10."""
 
 import collections
+import itertools
 import sys
 
-from typing import Dict, Iterator, List, Set, Tuple
+from typing import Dict, Iterator, List, Set
 
 
-class Cell(collections.namedtuple("Cell", "x, y pipe", defaults=(0, 0, None))):
-    def __repr__(self):
-        if self.pipe:
-            return f"{self.__class__.__name__}(x={self.x}, y={self.y}, pipe={self.pipe})"
-        else:
-            return f"{self.__class__.__name__}(x={self.x}, y={self.y})"
-
+class Cell(collections.namedtuple("Cell", "x, y pipe direction", defaults=(0, 0, None, None))):
     def __hash__(self):
         return hash((self.x, self.y))
 
@@ -61,9 +56,22 @@ PIPES = {
     "|": "NS",
     "-": "EW",
     "L": "NE",
-    "J": "NW",
+    "J": "WN",
     "7": "SW",
-    "F": "SE",
+    "F": "ES",
+}
+
+TURNS = {
+    ("|", "|"): None,
+    ("-", "-"): None,
+    ("|", "F"): "E",
+    ("|", "L"): "E",
+    ("|", "7"): "W",
+    ("|", "J"): "W",
+    ("-", "F"): "S",
+    ("-", "7"): "S",
+    ("-", "L"): "N",
+    ("-", "J"): "N",
 }
 
 
@@ -75,7 +83,7 @@ def part_01(puzzle_input: List[str]) -> int:
 
     first_move = PIPES[start_at.pipe][0]
 
-    loop = run(start_at, pipes, first_move)
+    loop = run_01(start_at, pipes, first_move)
 
     n = len(loop)
 
@@ -88,29 +96,16 @@ def part_01(puzzle_input: List[str]) -> int:
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
-    # I have been trying to solve this for too many hours.
-    # I think it has something to do with a scanline search.
-    # There are sixteen possible turns following the loop clockwise"
-    # F-7 -> S
-    # F-J -> S
-    # L-J -> N
-    # L-7 -> N
-    # J-L => N
-    # J-F -> N
-    # 7-F -> S
-    # 7-L -> S
-    #
-    # F|L -> E
-    # F|J -> E
-    # 7|J -> W
-    # 7|L -> W
-    # L|F -> E
-    # L|7 -> E
-    # J|F -> W
-    # J|7 -> W
-    # For each straight tile between the turns,
-    # all tiles to "right" until the next part of the loop
-    # are bounded by the loop
+    start_at, pipes, __ = parse(puzzle_input)
+    start_at, moves = get_map(start_at, pipes)
+
+    first_move = PIPES[start_at.pipe][0]
+
+    loop = run_01(start_at, moves, first_move)
+
+    result = run_02(pipes, loop, flip=True)
+
+    return len(result)
 
 
 def parse(puzzle_input: List[str]) -> List[Cell]:
@@ -172,28 +167,112 @@ def get_map(start_at: Cell, pipes: List[Cell]) -> Dict[Cell, Dict[str, Cell]]:
     return start_at, result
 
 
-def run(start_at: Cell, pipes: Dict[Cell, Dict[bool, Cell]], first_move: str) -> int:
+def run_01(start_at: Cell, moves: Dict[Cell, Dict[bool, Cell]], first_move: str) -> int:
     """Return the route of the loop."""
 
     result = []
 
-    prev = start_at
-    curr = pipes[start_at][first_move]
+    prev = start_at._replace(direction=first_move)
+    curr = moves[start_at][first_move]
 
     while True:
         result.append(prev)
 
-        (move_a, next_a), (move_b, next_b) = pipes[curr].items()
+        (move_a, next_a), (move_b, next_b) = moves[curr].items()
 
         if next_a == prev:
-            prev, curr = curr, next_b
+            curr = curr._replace(direction=move_b)
+            prev, curr = curr, Cell(next_b.x, next_b.y, next_b.pipe)
         elif next_b == prev:
-            prev, curr = curr, next_a
+            curr = curr._replace(direction=move_a)
+            prev, curr = curr, Cell(next_a.x, next_a.y, next_a.pipe)
         else:
             raise RuntimeError("Impossible")
 
         if curr == start_at:
             result.append(prev)
             break
+
+    return result
+
+
+def run_02(pipes: List[Cell], loop: List[Cell], flip=False) -> Set[Cell]:
+    """Return the cells enclosed by the loop."""
+
+    pipes = {each: each for each in pipes}
+
+    loop.append(loop[0])
+
+    steps = itertools.cycle(loop)
+
+    prev_turn = None
+
+    runs = []
+    run = []
+
+    start_at = None
+
+    for step in steps:
+        if step.pipe in ["|", "-"]:
+            if prev_turn is None:
+                continue
+            else:
+                run.append(step)
+        else:
+            if prev_turn is None:
+                start_at = step
+                run.append(step)
+            else:
+                run.append(step)
+                runs.append(run)
+                run = [step]
+
+                if step == start_at:
+                    break
+
+            prev_turn = step
+
+    on_right = {
+        ("7", "S"): "W",
+        ("7", "W"): "N",
+        ("J", "N"): "E",
+        ("J", "W"): "N",
+        ("L", "N"): "E",
+        ("L", "E"): "S",
+        ("F", "S"): "W",
+        ("F", "E"): "S",
+    }
+
+    result = set()
+
+    seen = set()
+
+    for run in runs:
+        key = (run[0].pipe, run[0].direction)
+
+        direction = on_right[key]
+
+        if flip:
+            direction = LAST_MOVE[direction]
+
+        move = MOVES[direction]
+
+        if key not in seen:
+            seen.add(key)
+
+        for each in run:
+            for i in itertools.count(1):
+                cell = Cell(each.x + (move.x * i), each.y + (move.y * i))
+                try:
+                    cell = pipes[cell]
+                except KeyError:
+                    break
+                else:
+                    if cell in loop:
+                        break
+                    else:
+                        result.add(cell)
+
+    result = {Cell(each.x, each.y) for each in result}
 
     return result
