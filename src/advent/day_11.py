@@ -18,7 +18,17 @@ class Point(collections.namedtuple("Point", "x y")):
 def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
-    points, mn, mx = parse(puzzle_input, expand=True)
+    return solve(puzzle_input, expand=2)
+
+
+def part_02(puzzle_input: List[str]) -> int:
+    """Solve part two."""
+
+    return solve(puzzle_input, expand=1000000)
+
+
+def solve(puzzle_input: List[str], expand=0) -> int:
+    points, mn, mx = parse(puzzle_input, expand)
 
     n = 0
 
@@ -26,10 +36,6 @@ def part_01(puzzle_input: List[str]) -> int:
         n += shortcut(a, b)
 
     return n
-
-
-def part_02(puzzle_input: List[str]) -> int:
-    """Solve part two."""
 
 
 def dump(points: List[Point], mn: Point, mx: Point, path: List[Point] = None) -> List[str]:
@@ -48,8 +54,8 @@ def dump(points: List[Point], mn: Point, mx: Point, path: List[Point] = None) ->
     return ["".join(line) for line in lines]
 
 
-def parse(puzzle_input: List[str], expand=True) -> List[Point]:
-    result = []
+def parse(puzzle_input: List[str], expand: int = 0) -> List[Point]:
+    points = []
 
     if expand:
         num_rows = len(puzzle_input)
@@ -61,14 +67,29 @@ def parse(puzzle_input: List[str], expand=True) -> List[Point]:
         empty_rows = []
         empty_cols = []
 
-    for y, line in iter_items(puzzle_input, empty_rows):
-        for x, char in iter_items(line, empty_cols):
+    if expand:
+        expand -= 1
+
+    y_offset = 0
+
+    for y, line in enumerate(puzzle_input):
+        if y in empty_rows:
+            y_offset += expand
+
+        x_offset = 0
+
+        for x, char in enumerate(line):
+            if x in empty_cols:
+                x_offset += expand
+
             if char == "#":
-                p = Point(int(x), int(y))
+                p = Point(int(x) + x_offset, int(y) + y_offset)
 
-                result.append(p)
+                points.append(p)
 
-    return result, Point(0, 0), Point(x, y)
+    mn, mx = Point(0, 0), Point(x + x_offset, y + y_offset)
+
+    return points, mn, mx
 
 
 def is_row_empty(puzzle_input: List[str], row: int) -> bool:
@@ -83,68 +104,18 @@ def is_col_empty(puzzle_input: List[str], col: int) -> bool:
     return {line[col] for line in puzzle_input} == {"."}
 
 
-def iter_items(items: List, double_indexes: List[int]):
+def iter_items(items: List, double_indexes: List[int], expand=0):
     """Yield the given items, once normally, twice at the given indexes."""
 
     index = itertools.count()
 
     for i, item in enumerate(items):
         if i in double_indexes:
-            yield next(index), item
-            yield next(index), item
+            for _ in range(expand):
+                yield next(index), item
         else:
             yield next(index), item
 
 
 def shortcut(a: Point, b: Point) -> int:
     return abs(b.x - a.x) + abs(b.y - a.y)
-
-
-def shortest_path(a: Point, b: Point, mn: Point, mx: Point):
-    queue = collections.deque()
-
-    visited = set()
-    dist = {a: 0}
-    prev = {}
-
-    queue.append(a)
-    visited.add(a)
-
-    while queue:
-        p = queue.popleft()
-
-        for n in neighbors(p):
-            if n < mn:
-                continue
-
-            if n > mx:
-                continue
-
-            if n not in visited:
-                visited.add(n)
-                dist[n] = dist[p] + 1
-                prev[n] = p
-
-                queue.append(n)
-
-        if b in visited:
-            break
-
-    path = []
-    n = b
-
-    while n != a:
-        path.append(n)
-        n = prev[n]
-
-    path.append(a)
-    path.reverse()
-
-    return path
-
-
-def neighbors(p: Point) -> Iterator[Point]:
-    yield Point(p.x + 1, p.y + 0)
-    yield Point(p.x + 0, p.y + 1)
-    yield Point(p.x - 1, p.y + 0)
-    yield Point(p.x + 0, p.y - 1)
