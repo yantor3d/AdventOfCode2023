@@ -77,7 +77,7 @@ def test_get_arrangements(line, checksum, expected):
         ("?###????????", (3, 2, 1), 10),
     ],
 )
-def test_num_arrangements(line, checksum, expected):
+def test_num_arrangements_01(line, checksum, expected):
     actual = advent.day_12.get_arrangements(line, checksum)
 
     assert expected == len(actual)
@@ -87,3 +87,30 @@ def test_part_01(puzzle_input):
     answer = advent.day_12.part_01(puzzle_input)
 
     assert answer == 21
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize(
+    "line,checksum,expected",
+    [
+        ("???.###", (1, 1, 3), 1),
+        (".??..??...?##.", (1, 1, 3), 16384),
+        ("?#?#?#?#?#?#?#?", (1, 3, 1, 6), 1),
+        ("????.#...#...", (4, 1, 1), 16),
+        ("????.######..#####.", (1, 6, 5), 2500),
+        ("?###????????", (3, 2, 1), 506250),
+    ],
+)
+def test_num_arrangements_02(line, checksum, expected):
+    line = "?".join([line] * 5)
+    checksum = checksum * 5
+    actual = advent.day_12.get_arrangements(line, checksum)
+
+    assert expected == len(actual)
+
+
+@pytest.mark.skip
+def test_part_02(puzzle_input):
+    answer = advent.day_12.part_02(puzzle_input)
+
+    assert answer == 525152

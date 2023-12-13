@@ -24,6 +24,21 @@ def part_01(puzzle_input: List[str]) -> int:
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
+    return 0
+
+    values = parse(puzzle_input)
+
+    n = 0
+
+    for line, checksum in values:
+        line = "?".join([line] * 5)
+        checksum = checksum * 5
+        result = get_arrangements(line, checksum)
+
+        n += len(result)
+
+    return n
+
 
 def parse(puzzle_input: List[str]) -> List:
     result = []
@@ -51,7 +66,7 @@ def get_arrangements(line: str, checksum: Tuple[int]) -> Set[str]:
         if is_repaired(line):
             if get_checksum(line) == checksum:
                 result.add(line)
-        else:
+        elif is_possible(line, checksum):
             queue.extend(get_repairs(line))
 
     return result
@@ -60,21 +75,21 @@ def get_arrangements(line: str, checksum: Tuple[int]) -> Set[str]:
 def get_checksum(line: str) -> Tuple[int]:
     """Return the condition record checksum."""
 
-    groups = []
-    group = []
+    result = []
+    n = 0
 
     for char in line:
         if char == ".":
-            if group:
-                groups.append(group)
-                group = []
+            if n:
+                result.append(n)
+                n = 0
         elif char == "#":
-            group.append(char)
+            n += 1
     else:
-        if group:
-            groups.append(group)
+        if n:
+            result.append(n)
 
-    return tuple([len(grp) for grp in groups])
+    return tuple(result)
 
 
 def get_repairs(line: str) -> Iterator[str]:
@@ -89,3 +104,11 @@ def is_repaired(line: str) -> bool:
     """Return True if the line has been repaired."""
 
     return "?" not in line
+
+
+def is_possible(line: str, checksum: Tuple[int]) -> bool:
+    """Return True if the given line is possible."""
+
+    n = sum(checksum)
+
+    return line.count("#") + line.count("?") >= n
