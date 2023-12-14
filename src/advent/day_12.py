@@ -1,6 +1,7 @@
 """Advent of Code 2023, Day 12."""
 
 import collections
+import functools
 import itertools
 
 from typing import Iterator, List, Set, Tuple
@@ -13,10 +14,8 @@ def part_01(puzzle_input: List[str]) -> int:
 
     n = 0
 
-    for line, checksum in values:
-        result = get_arrangements(line, checksum)
-
-        n += len(result)
+    for line, blocks in values:
+        n += num_solutions(line + ".", blocks)
 
     return n
 
@@ -24,20 +23,19 @@ def part_01(puzzle_input: List[str]) -> int:
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
-    return 0
-
     values = parse(puzzle_input)
 
     n = 0
 
-    for line, checksum in values:
-        line = "?".join([line] * 5)
-        checksum = checksum * 5
-        result = get_arrangements(line, checksum)
-
-        n += len(result)
+    for line, blocks in values:
+        line, blocks = unfold(line, blocks)
+        n += num_solutions(line + ".", blocks)
 
     return n
+
+
+def unfold(line: str, blocks: Tuple[int], n: int = 5) -> Tuple[str, Tuple[int]]:
+    return ("?".join([line] * n), blocks * n)
 
 
 def parse(puzzle_input: List[str]) -> List:
@@ -46,69 +44,43 @@ def parse(puzzle_input: List[str]) -> List:
     for line in puzzle_input:
         line, numbers = line.split()
 
-        checksum = tuple(map(int, numbers.split(",")))
+        blocks = tuple(map(int, numbers.split(",")))
 
-        result.append((line, checksum))
-
-    return result
-
-
-def get_arrangements(line: str, checksum: Tuple[int]) -> Set[str]:
-    """Return the possible arrangements for the line."""
-
-    result = set()
-
-    queue = collections.deque([line])
-
-    while queue:
-        line = queue.popleft()
-
-        if is_repaired(line):
-            if get_checksum(line) == checksum:
-                result.add(line)
-        elif is_possible(line, checksum):
-            queue.extend(get_repairs(line))
+        result.append((line, blocks))
 
     return result
 
 
-def get_checksum(line: str) -> Tuple[int]:
-    """Return the condition record checksum."""
+def num_solutions(line: str, blocks: Tuple[int]) -> int:
+    @functools.cache
+    def fn(start, block_num, count=0):
+        end_of_line = start == len(line)
 
-    result = []
-    n = 0
+        if end_of_line:
+            return int(block_num == len(blocks))
 
-    for char in line:
-        if char == ".":
-            if n:
-                result.append(n)
-                n = 0
-        elif char == "#":
-            n += 1
-    else:
-        if n:
-            result.append(n)
+        end_of_block = line[start] in ".?"
 
-    return tuple(result)
+        if end_of_block:
+            count += fn(start + 1, block_num)
 
+        end_of_blocks = block_num == len(blocks)
 
-def get_repairs(line: str) -> Iterator[str]:
-    """Yield the ways in which the given line could be repaired."""
+        if end_of_blocks:
+            pass
+        else:
+            end = start + blocks[block_num]
 
-    if "?" in line:
-        yield line.replace("?", ".", 1)
-        yield line.replace("?", "#", 1)
+            try:
+                start_of_block = line[start] in "#?"
+                can_fit_block = "." not in line[start:end]
+                can_end_block = line[end] in ".?"
+            except IndexError:
+                pass
+            else:
+                if start_of_block and can_fit_block and can_end_block:
+                    count += fn(end + 1, block_num + 1)
 
+        return count
 
-def is_repaired(line: str) -> bool:
-    """Return True if the line has been repaired."""
-
-    return "?" not in line
-
-
-def is_possible(line: str, checksum: Tuple[int]) -> bool:
-    """Return True if the given line is possible."""
-
-    n = sum(checksum)
-
-    return line.count("#") + line.count("?") >= n
+    return fn(0, 0)
