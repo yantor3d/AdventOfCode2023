@@ -52,7 +52,7 @@ def parse(puzzle_input: List[str]) -> List:
 
 
 def num_solutions(line: str, blocks: Tuple[int]) -> int:
-    @functools.cache
+    # @functools.cache
     def fn(start, block_num, count=0):
         end_of_line = start == len(line)
 
