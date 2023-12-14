@@ -52,61 +52,6 @@ def test_parse(puzzle_input):
 
 
 @pytest.mark.parametrize(
-    "lines,expected",
-    [
-        (
-            [
-                "#####.##.",
-                "#####.##.",
-            ],
-            True,
-        ),
-        (
-            [
-                "..##..###",
-                "#####.##.",
-                "#####.##.",
-                "..##..###",
-            ],
-            True,
-        ),
-        (
-            [
-                "#....#..#",
-                "..##..###",
-                "#####.##.",
-                "#####.##.",
-                "..##..###",
-                "#....#..#",
-            ],
-            True,
-        ),
-        (
-            [
-                "#...##..#",
-                "#....#..#",
-                "..##..###",
-                "#####.##.",
-                "#####.##.",
-                "..##..###",
-            ],
-            False,
-        ),
-    ],
-    ids=[
-        "Pattern 1, Rows 4:5 True",
-        "Pattern 1, Rows 3:6 True",
-        "Pattern 1, Rows 2:7 True",
-        "Pattern 1, Rows 1:6 False",
-    ],
-)
-def test_is_mirror_image(lines, expected):
-    actual = advent.day_13.is_mirror_image(lines)
-
-    assert actual == expected
-
-
-@pytest.mark.parametrize(
     "n,expected",
     [(0, ("v", (5, 6))), (1, ("h", (4, 5)))],
     ids=[
@@ -114,7 +59,7 @@ def test_is_mirror_image(lines, expected):
         "Pattern 2, Horizontal between Rows 4/5",
     ],
 )
-def test_reflections(puzzle_input, n, expected):
+def test_reflections_01(puzzle_input, n, expected):
     patterns = advent.day_13.parse(puzzle_input)
     pattern = patterns[n]
     actual = advent.day_13.find_reflection(pattern)
@@ -124,13 +69,16 @@ def test_reflections(puzzle_input, n, expected):
 
 @pytest.mark.parametrize(
     "reflection,expected",
-    [(("v", (5, 6)), 5), (("h", (4, 5)), 400)],
+    [
+        (("v", (5, 6)), 5),
+        (("h", (4, 5)), 400),
+    ],
     ids=[
         "Vertical",
         "Horizontal",
     ],
 )
-def test_score(reflection, expected):
+def test_score_01(reflection, expected):
     actual = advent.day_13.score(reflection)
 
     assert actual == expected
@@ -140,3 +88,25 @@ def test_part_01(puzzle_input):
     answer = advent.day_13.part_01(puzzle_input)
 
     assert answer == 405
+
+
+@pytest.mark.parametrize(
+    "n,expected",
+    [(0, ("h", (3, 4))), (1, ("h", (1, 2)))],
+    ids=[
+        "Pattern 1, Horizontal between Row 3/4",
+        "Pattern 2, Horizontal between Row 1/2",
+    ],
+)
+def test_reflections_02(puzzle_input, n, expected):
+    patterns = advent.day_13.parse(puzzle_input)
+    pattern = patterns[n]
+    actual = advent.day_13.find_reflection(pattern, max_smudge=1)
+
+    assert actual == expected
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_13.part_02(puzzle_input)
+
+    assert answer == 400
