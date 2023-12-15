@@ -42,3 +42,22 @@ def test_part_01(puzzle_input):
     answer = advent.day_15.part_01(puzzle_input)
 
     assert answer == 1320
+
+
+@pytest.mark.parametrize(
+    "box_number,lenses,expected",
+    (
+        [0, {"rn": 1, "cm": 2}, 5],
+        [3, {"ot": 7, "ab": 5, "pc": 6}, 140],
+    ),
+)
+def test_focusing_power(box_number, lenses, expected):
+    actual = advent.day_15.focusing_power(box_number, lenses)
+
+    assert expected == actual
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_15.part_02(puzzle_input)
+
+    assert answer == 145
