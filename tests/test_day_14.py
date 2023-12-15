@@ -22,96 +22,84 @@ def puzzle_input():
 
 
 def test_rotate():
-    old = [
-        '#.O',
-        '##.',
-        '..#'
-    ]
+    old = ["#.O", "##.", "..#"]
 
     new = [
-        '.##',
-        '.#.',
-        '#.O',
+        ".##",
+        ".#.",
+        "#.O",
     ]
 
     tmp = advent.day_14.unpack(old)
     out = advent.day_14.rotate_cw(tmp)
     out = advent.day_14.repack(out)
-    
+
     assert out == new
 
     tmp = advent.day_14.unpack(new)
     out = advent.day_14.rotate_ccw(tmp)
     out = advent.day_14.repack(out)
-    
+
     assert out == old
 
 
 def test_mirror_h():
-    old = [
-        '#.O',
-        '##.',
-        '..#'
-    ]
+    old = ["#.O", "##.", "..#"]
 
     new = [
-        'O.#',
-        '.##',
-        '#..',
+        "O.#",
+        ".##",
+        "#..",
     ]
 
     tmp = advent.day_14.unpack(old)
     out = advent.day_14.mirror_h(tmp)
     out = advent.day_14.repack(out)
-    
+
     assert out == new
 
     tmp = advent.day_14.unpack(new)
     out = advent.day_14.mirror_h(tmp)
     out = advent.day_14.repack(out)
-    
+
     assert out == old
 
 
 def test_mirror_v():
-    old = [
-        '#.O',
-        '##.',
-        '..#'
-    ]
+    old = ["#.O", "##.", "..#"]
 
     new = [
-        '..#',
-        '##.',
-        '#.O',
+        "..#",
+        "##.",
+        "#.O",
     ]
 
     tmp = advent.day_14.unpack(old)
     out = advent.day_14.mirror_v(tmp)
     out = advent.day_14.repack(out)
-    
+
     assert out == new
 
     tmp = advent.day_14.unpack(new)
     out = advent.day_14.mirror_v(tmp)
     out = advent.day_14.repack(out)
-    
+
     assert out == old
 
 
 @pytest.mark.parametrize(
-    'old,new',
+    "old,new",
     (
-        ('OO.O.O..##', 'OOOO....##'),
-        ('...OO....O', 'OOO.......'),
-        ('.O...#O..O', 'O....#OO..'),
-        ('.#.O......', '.#O.......'),
-        ('#.#..O#.##', '#.#O..#.##'),
-        ('..#...O.#.', '..#O....#.'),
-        ('....O#.O#.', 'O....#O.#.'),
-        ('....#.....', '....#.....'),
-        ('.#.O.#O...', '.#O..#O...'),
-    )
+        ("OO.O.O..##", "OOOO....##"),
+        ("...OO....O", "OOO......."),
+        (".O...#O..O", "O....#OO.."),
+        (".#.O......", ".#O......."),
+        ("#.#..O#.##", "#.#O..#.##"),
+        ("..#...O.#.", "..#O....#."),
+        ("....O#.O#.", "O....#O.#."),
+        ("....#.....", "....#....."),
+        (".#.O.#O...", ".#O..#O..."),
+    ),
 )
 def test_roll(old, new):
     out = advent.day_14.roll(old)
@@ -199,7 +187,7 @@ def test_part_01(puzzle_input):
     answer = advent.day_14.part_01(puzzle_input)
 
     assert answer == 136
-    
+
 
 def test_spin_1(puzzle_input):
     grid = advent.day_14.unpack(puzzle_input)
@@ -207,19 +195,18 @@ def test_spin_1(puzzle_input):
     grid = advent.day_14.repack(grid)
 
     assert grid == [
-        '.....#....',
-        '....#...O#',
-        '...OO##...',
-        '.OO#......',
-        '.....OOO#.',
-        '.O#...O#.#',
-        '....O#....',
-        '......OOOO',
-        '#...O###..',
-        '#..OO#....',
+        ".....#....",
+        "....#...O#",
+        "...OO##...",
+        ".OO#......",
+        ".....OOO#.",
+        ".O#...O#.#",
+        "....O#....",
+        "......OOOO",
+        "#...O###..",
+        "#..OO#....",
     ]
 
-    
 
 def test_spin_2(puzzle_input):
     grid = advent.day_14.unpack(puzzle_input)
@@ -228,19 +215,19 @@ def test_spin_2(puzzle_input):
     grid = advent.day_14.repack(grid)
 
     assert grid == [
-        '.....#....',
-        '....#...O#',
-        '.....##...',
-        '..O#......',
-        '.....OOO#.',
-        '.O#...O#.#',
-        '....O#...O',
-        '.......OOO',
-        '#..OO###..',
-        '#.OOO#...O',
+        ".....#....",
+        "....#...O#",
+        ".....##...",
+        "..O#......",
+        ".....OOO#.",
+        ".O#...O#.#",
+        "....O#...O",
+        ".......OOO",
+        "#..OO###..",
+        "#.OOO#...O",
     ]
 
-    
+
 def test_spin_3(puzzle_input):
     grid = advent.day_14.unpack(puzzle_input)
     grid = advent.day_14.spin(grid)
@@ -249,16 +236,16 @@ def test_spin_3(puzzle_input):
     grid = advent.day_14.repack(grid)
 
     assert grid == [
-        '.....#....',
-        '....#...O#',
-        '.....##...',
-        '..O#......',
-        '.....OOO#.',
-        '.O#...O#.#',
-        '....O#...O',
-        '.......OOO',
-        '#...O###.O',
-        '#.OOO#...O',
+        ".....#....",
+        "....#...O#",
+        ".....##...",
+        "..O#......",
+        ".....OOO#.",
+        ".O#...O#.#",
+        "....O#...O",
+        ".......OOO",
+        "#...O###.O",
+        "#.OOO#...O",
     ]
 
 

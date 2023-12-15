@@ -33,11 +33,11 @@ def part_02(puzzle_input: List[str]) -> int:
     for i in range(1, n + 1):
         grid = spin(grid)
         loads[i] = get_load(grid)
-        
+
         if grid in grids:
             if start is None:
                 start = grids[grid]
-            
+
             if end is None:
                 end = i - 1
                 break
@@ -52,7 +52,7 @@ def part_02(puzzle_input: List[str]) -> int:
     # Brute force answer check
     # x = start
     # while x < n:
-    #     x += d 
+    #     x += d
     # s = end - (x - n) + 1
 
     # print(s)
@@ -78,7 +78,7 @@ def unpack(grid: List[str]) -> List[List[str]]:
 
 
 def repack(grid: List[List[str]]) -> List[str]:
-    return [''.join(row) for row in grid]
+    return ["".join(row) for row in grid]
 
 
 @functools.cache
@@ -128,10 +128,7 @@ def rotate_cw(grid: List[List[str]]) -> List[List[str]]:
     num_rows = len(grid)
     num_cols = len(grid[0])
 
-    return tuple([
-        tuple([grid[y][x] for y in reversed(range(num_rows))])
-        for x in range(num_cols)
-    ])
+    return tuple([tuple([grid[y][x] for y in reversed(range(num_rows))]) for x in range(num_cols)])
 
 
 @functools.cache
@@ -139,32 +136,23 @@ def rotate_ccw(grid: List[List[str]]) -> List[List[str]]:
     num_rows = len(grid)
     num_cols = len(grid[0])
 
-    return tuple([
-        tuple([grid[y][x] for y in range(num_rows)])
-        for x in reversed(range(num_cols))
-    ])
+    return tuple([tuple([grid[y][x] for y in range(num_rows)]) for x in reversed(range(num_cols))])
 
 
 @functools.cache
 def mirror_h(grid: List[List[str]]) -> List[List[str]]:
     num_rows = len(grid)
     num_cols = len(grid[0])
-    
-    return tuple([
-        tuple([grid[y][x] for x in reversed(range(num_cols))])
-        for y in range(num_rows)
-    ])
+
+    return tuple([tuple([grid[y][x] for x in reversed(range(num_cols))]) for y in range(num_rows)])
 
 
 @functools.cache
 def mirror_v(grid: List[List[str]]) -> List[List[str]]:
     num_rows = len(grid)
     num_cols = len(grid[0])
-    
-    return tuple([
-        tuple([grid[y][x] for x in range(num_cols)])
-        for y in reversed(range(num_rows))
-    ])
+
+    return tuple([tuple([grid[y][x] for x in range(num_cols)]) for y in reversed(range(num_rows))])
 
 
 @functools.cache
@@ -179,16 +167,16 @@ def roll(items: List[str]):
     items = list(items)
 
     for i, item in enumerate(items):
-        if item == 'O':
+        if item == "O":
             if empty is None:
                 # Can't roll any further
-                continue 
+                continue
             else:
-                items[empty], items[i] = item, '.'
+                items[empty], items[i] = item, "."
                 empty += 1
-        elif item == '.':
-            empty = i if empty is None else empty 
-        elif item == '#':
+        elif item == ".":
+            empty = i if empty is None else empty
+        elif item == "#":
             empty = None
             continue
         else:
