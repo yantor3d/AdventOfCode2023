@@ -34,7 +34,6 @@ def test_num_solutions_01(line, blocks, expected):
     assert actual == expected
 
 
-@pytest.mark.skip
 def test_part_01(puzzle_input):
     answer = advent.day_12.part_01(puzzle_input)
 

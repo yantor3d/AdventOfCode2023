@@ -18,8 +18,12 @@ def main():
     st = time.time()
 
     days = []
+    t01s = []
+    t02s = []
 
-    for day in args.days:
+    n = 0
+
+    for day in args.days or ["1-25"]:
         if "-" in day:
             mn, mx = day.split("-")
             days.extend(range(int(mn), int(mx) + 1))
@@ -37,12 +41,28 @@ def main():
             break
 
         print(f"\nDay {day:02d}")
-        advent.solve(day, getattr(module, "part_01", None), getattr(module, "part_02", None))
+        a01, a02 = advent.solve(
+            day, getattr(module, "part_01", None), getattr(module, "part_02", None)
+        )
+
+        if a01.value is not None:
+            t01s.append(a01.time)
+
+        if a02.value is not None:
+            t02s.append(a02.time)
+
+        n += 1
 
     et = time.time()
 
-    if len(days) > 1:
-        print(f"\nSolved {len(days)} puzzles in {et - st:.2f} seconds.")
+    if n > 1:
+        print(f"\nSolved {n} puzzles in {et - st:.3f} seconds.")
+        print(
+            f"\tPart 01 min: {min(t01s):.3f}s max: {max(t01s):.3f}s average: {sum(t01s) / float(len(t01s)):.3f}s"
+        )
+        print(
+            f"\tPart 02 min: {min(t02s):.3f}s max: {max(t02s):.3f}s average: {sum(t02s) / float(len(t02s)):.3f}s"
+        )
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ def test_parse_01b(puzzle_input_01b):
     assert tree["ZZZ"] == {"L": "ZZZ", "R": "ZZZ"}
 
 
-@pytest_cases.pytest_parametrize_plus(
+@pytest_cases.parametrize(
     "puzzle_input,expected",
     [
         [pytest_cases.fixture_ref(puzzle_input_01a), 2],

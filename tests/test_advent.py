@@ -12,5 +12,5 @@ def test_get_puzzle_input(get_example_input):
 def test_solve(test_source):
     answer_01, answer_02 = advent.solve(0, len, bool, test_source)
 
-    assert answer_01 == 2
-    assert answer_02 is True
+    assert answer_01.value == 2
+    assert answer_02.value is True

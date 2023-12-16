@@ -1,11 +1,15 @@
 """Advent of Code 2023."""
 
+import contextlib
+import collections
 import os
 import time
 
 from typing import Any, List, Tuple
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+Answer = collections.namedtuple("Answer", "value time")
 
 
 def solve(
@@ -23,25 +27,25 @@ def solve(
         tuple
     """
 
-    args = get_puzzle_input(day, source)
+    puzzle_input = get_puzzle_input(day, source)
 
-    st = time.time()
-    answer_01 = fn_01(args)
-    et = time.time()
-
-    if answer_01 is not None:
-        print(f"Part 01: {answer_01}")
-        print("Took {:.3f} seconds".format(et - st))
-
-    st = time.time()
-    answer_02 = fn_02(args)
-    et = time.time()
-
-    if answer_02 is not None:
-        print(f"Part 02: {answer_02}")
-        print("Took {:.3f} seconds".format(et - st))
+    answer_01 = run("Part 01", fn_01, puzzle_input)
+    answer_02 = run("Part 02", fn_02, puzzle_input)
 
     return answer_01, answer_02
+
+
+def run(part: str, fn: callable, puzzle_input: List[str]) -> Answer:
+    st = time.time()
+    value = fn(puzzle_input)
+    et = time.time()
+
+    answer = Answer(value, et - st)
+
+    if value is not None:
+        print(f"{part}: {answer.value:< 16} in {answer.time:.3f}s")
+
+    return answer
 
 
 def get_puzzle_input(day: int, source: str = "data") -> List[str]:
