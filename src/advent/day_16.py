@@ -1,10 +1,11 @@
 """Advent of Code 2023, Day 16."""
 
+from __future__ import annotations
+
 import collections
+import functools
 
-from typing import Dict, ForwardRef, List, Set, Tuple
-
-Point = ForwardRef("Point")
+from typing import Iterator, List, Set, Tuple
 
 
 class Point(collections.namedtuple("Point", "x y")):
@@ -16,6 +17,102 @@ class Point(collections.namedtuple("Point", "x y")):
 
     def __add__(self, other: Point) -> Point:
         return Point(self.x + other.x, self.y + other.y)
+
+
+Move = Tuple[Point, str]
+
+
+class Puzzle(dict):
+    """A grid of tiles with symbols."""
+
+    def __hash__(self) -> int:
+        return id(self)
+
+    def run(self, s: Point, d: str) -> int:
+        routes = collections.deque([(s, d)])
+
+        seen = set()
+        visited = set()
+
+        while routes:
+            p, d = routes.popleft()
+
+            if (p, d) in seen:
+                continue
+
+            seen.add((p, d))
+
+            n, v = self.go(p, d)
+
+            routes.extend(n)
+            visited.update(v)
+
+        return len(visited)
+
+    @functools.cache
+    def go(self, s: Point, d: str) -> Tuple[List[Move], Set[Move]]:
+        result = []
+        visited = set()
+        p = s
+
+        while True:
+            try:
+                x = self[p]
+            except KeyError:
+                break
+            else:
+                visited.add(p)
+
+            rules = RULES[x][d]
+
+            if rules == d:
+                m = MOVES[rules]
+                p = p + m
+            else:
+                for r in rules:
+                    m = MOVES[r]
+                    n = p + m
+
+                    if n in self:
+                        result.append((n, r))
+                break
+
+        return result, visited
+
+    def edges(self) -> Iterator[Move]:
+        mx = max(self)
+
+        # Top left
+        yield Point(0, 0), "S"
+        yield Point(0, 0), "E"
+
+        # Top row
+        for x in range(1, mx.x):
+            yield Point(x, 0), "S"
+
+        # Top right
+        yield Point(mx.x, 0), "S"
+        yield Point(mx.x, 0), "W"
+
+        # Right edge
+        for y in range(1, mx.y):
+            yield Point(mx.x, y), "W"
+
+        # Bottom left
+        yield Point(0, mx.y), "N"
+        yield Point(0, mx.y), "E"
+
+        # Bottom row
+        for x in range(mx.x, 1, -1):
+            yield Point(x, mx.y), "N"
+
+        # Bottom right
+        yield Point(mx.x, mx.y), "N"
+        yield Point(mx.x, mx.y), "W"
+
+        # Left edge
+        for y in range(1, mx.y):
+            yield Point(0, y), "E"
 
 
 RULES = {
@@ -40,7 +137,7 @@ def part_01(puzzle_input: List[str]) -> int:
     start = Point(0, 0)
 
     puzzle = parse(puzzle_input)
-    x = run(start, "E", puzzle)
+    x = puzzle.run(start, "E")
 
     return x
 
@@ -52,50 +149,14 @@ def part_02(puzzle_input: List[str]) -> int:
 
     n = 0
 
-    for p, d in edges(puzzle):
-        x = run(p, d, puzzle)
+    for p, d in list(puzzle.edges()):
+        x = puzzle.run(p, d)
         n = max(n, x)
 
     return n
 
 
-def edges(puzzle):
-    mx = max(puzzle)
-
-    # Top left
-    yield Point(0, 0), "S"
-    yield Point(0, 0), "E"
-
-    # Top row
-    for x in range(1, mx.x):
-        yield Point(x, 0), "S"
-
-    # Top right
-    yield Point(mx.x, 0), "S"
-    yield Point(mx.x, 0), "W"
-
-    # Right edge
-    for y in range(1, mx.y):
-        yield Point(mx.x, y), "W"
-
-    # Bottom left
-    yield Point(0, mx.y), "N"
-    yield Point(0, mx.y), "E"
-
-    # Bottom row
-    for x in range(mx.x, 1, -1):
-        yield Point(x, mx.y), "N"
-
-    # Bottom right
-    yield Point(mx.x, mx.y), "N"
-    yield Point(mx.x, mx.y), "W"
-
-    # Left edge
-    for y in range(1, mx.y):
-        yield Point(0, y), "E"
-
-
-def parse(puzzle_input: List[str]) -> Dict[Point, str]:
+def parse(puzzle_input: List[str]) -> Puzzle:
     result = {}
 
     for y, line in enumerate(puzzle_input):
@@ -104,62 +165,4 @@ def parse(puzzle_input: List[str]) -> Dict[Point, str]:
 
             result[p] = char
 
-    return result
-
-
-def run(start: Point, heading: str, puzzle: Dict[Point, str]) -> int:
-    routes = collections.deque([(start, heading)])
-
-    seen = set()
-
-    visited = set()
-
-    while routes:
-        p, d = routes.popleft()
-
-        if (p, d) in seen:
-            continue
-
-        seen.add((p, d))
-        visited.add(p)
-
-        x = puzzle[p]
-
-        rules = RULES[x][d]
-
-        for r in rules:
-            m = MOVES[r]
-            n = p + m
-
-            try:
-                puzzle[n]
-            except KeyError:
-                continue
-            else:
-                routes.append((n, r))
-
-    return len(visited)
-
-
-def dump_route(route):
-    print(" > ".join([f"{p.x},{p.y} {d}" for p, d in route]))
-
-
-def dump_puzzle(puzzle, visited, fp=None):
-    mx = max(puzzle)
-
-    lines = []
-
-    for y in range(mx.y + 1):
-        line = []
-        for x in range(mx.x + 1):
-            line.append(".")
-        lines.append(line)
-
-    for p in visited:
-        lines[p.y][p.x] = "#"
-
-    lines = ["".join(line) for line in lines]
-
-    for line in lines:
-        print(line, file=fp)
+    return Puzzle(result)
