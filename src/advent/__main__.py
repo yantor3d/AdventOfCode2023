@@ -26,7 +26,7 @@ def main():
         elif "," in day:
             days.extend((int(d) for d in day.split))
         else:
-            days.append(int(d))
+            days.append(int(day))
 
     for day in days:
         day_name = "day_{:02d}".format(day)
