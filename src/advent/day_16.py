@@ -2,7 +2,7 @@
 
 import collections
 
-from typing import Dict, ForwardRef, List
+from typing import Dict, ForwardRef, List, Set, Tuple
 
 Point = ForwardRef("Point")
 
@@ -108,16 +108,14 @@ def parse(puzzle_input: List[str]) -> Dict[Point, str]:
 
 
 def run(start: Point, heading: str, puzzle: Dict[Point, str]) -> int:
-    routes = collections.deque([[(start, heading)]])
+    routes = collections.deque([(start, heading)])
 
     seen = set()
 
     visited = set()
 
     while routes:
-        route = routes.popleft()
-
-        p, d = route[-1]
+        p, d = routes.popleft()
 
         if (p, d) in seen:
             continue
@@ -133,14 +131,12 @@ def run(start: Point, heading: str, puzzle: Dict[Point, str]) -> int:
             m = MOVES[r]
             n = p + m
 
-            new_route = [i for i in route]
-            new_route.append((n, r))
-
             try:
                 puzzle[n]
-                routes.append(new_route)
             except KeyError:
                 continue
+            else:
+                routes.append((n, r))
 
     return len(visited)
 
