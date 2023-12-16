@@ -3,8 +3,12 @@
 import collections
 import itertools
 import sys
+import time
 
 from typing import Dict, Iterator, List, Set
+
+
+Point = collections.namedtuple("Point", "x y")
 
 
 class Cell(collections.namedtuple("Cell", "x, y pipe direction", defaults=(0, 0, None, None))):
@@ -124,7 +128,7 @@ def parse(puzzle_input: List[str]) -> List[Cell]:
 
             result.append(cell)
 
-    return start_at, result, Cell(x, y)
+    return start_at, result, Point(x, y)
 
 
 def get_map(start_at: Cell, pipes: List[Cell]) -> Dict[Cell, Dict[str, Cell]]:
@@ -204,6 +208,7 @@ def run_02(pipes: List[Cell], loop: List[Cell], flip=False) -> Set[Cell]:
     loop.append(loop[0])
 
     steps = itertools.cycle(loop)
+    loop = {Point(p.x, p.y) for p in loop}
 
     prev_turn = None
 
@@ -245,9 +250,7 @@ def run_02(pipes: List[Cell], loop: List[Cell], flip=False) -> Set[Cell]:
 
     result = set()
 
-    seen = set()
-
-    for run in runs:
+    for i, run in enumerate(runs, 1):
         key = (run[0].pipe, run[0].direction)
 
         direction = on_right[key]
@@ -257,22 +260,15 @@ def run_02(pipes: List[Cell], loop: List[Cell], flip=False) -> Set[Cell]:
 
         move = MOVES[direction]
 
-        if key not in seen:
-            seen.add(key)
-
         for each in run:
             for i in itertools.count(1):
-                cell = Cell(each.x + (move.x * i), each.y + (move.y * i))
-                try:
-                    cell = pipes[cell]
-                except KeyError:
+                cell = Point(each.x + (move.x * i), each.y + (move.y * i))
+
+                if cell in loop:
                     break
                 else:
-                    if cell in loop:
-                        break
-                    else:
-                        result.add(cell)
+                    result.add(cell)
 
-    result = {Cell(each.x, each.y) for each in result}
+    result = {Point(each.x, each.y) for each in result}
 
     return result

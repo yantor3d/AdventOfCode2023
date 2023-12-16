@@ -4,7 +4,7 @@ import pytest
 
 import advent.day_10
 
-from advent.day_10 import Cell
+from advent.day_10 import Cell, Point
 
 
 def test_parse_example_01a():
@@ -19,7 +19,7 @@ def test_parse_example_01a():
     start_at, result, mx = advent.day_10.parse(puzzle_input)
 
     assert start_at == Cell(1, 1, "S")
-    assert mx == Cell(4, 4)
+    assert mx == Point(4, 4)
 
     start_at, result = advent.day_10.get_map(start_at, result)
 
@@ -41,7 +41,7 @@ def test_parse_example_01b():
     start_at, result, mx = advent.day_10.parse(puzzle_input)
 
     assert start_at == Cell(0, 2, "S")
-    assert mx == Cell(4, 4)
+    assert mx == Point(4, 4)
 
     start_at, result = advent.day_10.get_map(start_at, result)
 
@@ -152,7 +152,7 @@ def test_example_02_01a():
     answer = run_02(puzzle_input)
 
     assert answer == {
-        Cell(2, 2),
+        Point(2, 2),
     }
 
 
@@ -168,7 +168,7 @@ def test_example_02_01b():
     answer = run_02(puzzle_input)
 
     assert answer == {
-        Cell(2, 2),
+        Point(2, 2),
     }
 
 
@@ -190,10 +190,10 @@ def test_example_02a():
     assert len(answer) == 4
 
     assert answer == {
-        Cell(2, 6),
-        Cell(3, 6),
-        Cell(7, 6),
-        Cell(8, 6),
+        Point(2, 6),
+        Point(3, 6),
+        Point(7, 6),
+        Point(8, 6),
     }
 
 
@@ -215,10 +215,10 @@ def test_example_02b():
     assert len(answer) == 4
 
     assert answer == {
-        Cell(2, 6),
-        Cell(3, 6),
-        Cell(6, 6),
-        Cell(7, 6),
+        Point(2, 6),
+        Point(3, 6),
+        Point(6, 6),
+        Point(7, 6),
     }
 
 
@@ -239,14 +239,14 @@ def test_example_02c():
     actual = run_02(puzzle_input, flip=True)
 
     expected = {
-        Cell(x=6, y=6),
-        Cell(x=7, y=4),
-        Cell(x=7, y=5),
-        Cell(x=8, y=4),
-        Cell(x=8, y=5),
-        Cell(x=9, y=4),
-        Cell(x=14, y=3),
-        Cell(x=14, y=6),
+        Point(x=6, y=6),
+        Point(x=7, y=4),
+        Point(x=7, y=5),
+        Point(x=8, y=4),
+        Point(x=8, y=5),
+        Point(x=9, y=4),
+        Point(x=14, y=3),
+        Point(x=14, y=6),
     }
 
     assert len(actual) == 8
@@ -301,7 +301,7 @@ def get_answer(puzzle_output):
     for y, line in enumerate(puzzle_output):
         for x, char in enumerate(line):
             if char == "I":
-                cell = Cell(x, y)
+                cell = Point(x, y)
                 result.add(cell)
 
     return result
