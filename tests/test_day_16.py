@@ -14,3 +14,9 @@ def test_part_01(puzzle_input):
     answer = advent.day_16.part_01(puzzle_input)
 
     assert answer == 46
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_16.part_02(puzzle_input)
+
+    assert answer == 51

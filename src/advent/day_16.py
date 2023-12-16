@@ -2,7 +2,7 @@
 
 import collections
 
-from typing import Dict, ForwardRef, List, Tuple
+from typing import Dict, ForwardRef, List
 
 Point = ForwardRef("Point")
 
@@ -40,13 +40,59 @@ def part_01(puzzle_input: List[str]) -> int:
     start = Point(0, 0)
 
     puzzle = parse(puzzle_input)
-    visited = run(start, puzzle)
+    x = run(start, "E", puzzle)
 
-    return len(visited)
+    return x
 
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
+
+    puzzle = parse(puzzle_input)
+
+    n = 0
+
+    for p, d in edges(puzzle):
+        x = run(p, d, puzzle)
+        n = max(n, x)
+
+    return n
+
+
+def edges(puzzle):
+    mx = max(puzzle)
+
+    # Top left
+    yield Point(0, 0), "S"
+    yield Point(0, 0), "E"
+
+    # Top row
+    for x in range(1, mx.x):
+        yield Point(x, 0), "S"
+
+    # Top right
+    yield Point(mx.x, 0), "S"
+    yield Point(mx.x, 0), "W"
+
+    # Right edge
+    for y in range(1, mx.y):
+        yield Point(mx.x, y), "W"
+
+    # Bottom left
+    yield Point(0, mx.y), "N"
+    yield Point(0, mx.y), "E"
+
+    # Bottom row
+    for x in range(mx.x, 1, -1):
+        yield Point(x, mx.y), "N"
+
+    # Bottom right
+    yield Point(mx.x, mx.y), "N"
+    yield Point(mx.x, mx.y), "W"
+
+    # Left edge
+    for y in range(1, mx.y):
+        yield Point(0, y), "E"
 
 
 def parse(puzzle_input: List[str]) -> Dict[Point, str]:
@@ -61,14 +107,12 @@ def parse(puzzle_input: List[str]) -> Dict[Point, str]:
     return result
 
 
-def run(start: Point, puzzle: Dict[Point, str]) -> int:
-    routes = collections.deque([[(start, "E")]])
-
-    visited = collections.defaultdict(list)
+def run(start: Point, heading: str, puzzle: Dict[Point, str]) -> int:
+    routes = collections.deque([[(start, heading)]])
 
     seen = set()
 
-    nv = []
+    visited = set()
 
     while routes:
         route = routes.popleft()
@@ -79,8 +123,7 @@ def run(start: Point, puzzle: Dict[Point, str]) -> int:
             continue
 
         seen.add((p, d))
-
-        visited[p].append(d)
+        visited.add(p)
 
         x = puzzle[p]
 
@@ -99,16 +142,14 @@ def run(start: Point, puzzle: Dict[Point, str]) -> int:
             except KeyError:
                 continue
 
-        nv.append(len(visited))
-
-    return visited
+    return len(visited)
 
 
 def dump_route(route):
     print(" > ".join([f"{p.x},{p.y} {d}" for p, d in route]))
 
 
-def dump_puzzle(puzzle, visited, fp):
+def dump_puzzle(puzzle, visited, fp=None):
     mx = max(puzzle)
 
     lines = []
@@ -117,19 +158,12 @@ def dump_puzzle(puzzle, visited, fp):
         line = []
         for x in range(mx.x + 1):
             line.append(".")
-        line.append("\n")
         lines.append(line)
 
-    arrows = {
-        "N": "^",
-        "S": "v",
-        "E": ">",
-        "W": "<",
-    }
-
-    for p, moves in visited.items():
+    for p in visited:
         lines[p.y][p.x] = "#"
 
     lines = ["".join(line) for line in lines]
 
-    fp.writelines(lines)
+    for line in lines:
+        print(line, file=fp)
