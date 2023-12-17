@@ -38,11 +38,15 @@ def part_01(puzzle_input: List[str]) -> int:
 
     maze = parse(puzzle_input)
 
-    return run(maze)
+    return run(maze, 1, 3)
 
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
+
+    maze = parse(puzzle_input)
+
+    return run(maze, 4, 10)
 
 
 def parse(puzzle_input: List[str]) -> Maze:
@@ -51,16 +55,16 @@ def parse(puzzle_input: List[str]) -> Maze:
     }
 
 
-def run(maze: Maze) -> Graph:
+def run(maze: Maze, mn: int, mx: int) -> Graph:
     s = min(maze)
     e = max(maze)
 
-    distances = get_distances(maze, s, e)
+    distances = get_distances(maze, s, e, mn, mx)
 
-    return min(distances)
+    return min(distances or [0])
 
 
-def get_distances(maze: Maze, s: Point, e: Point) -> Dict[Vertex, int]:
+def get_distances(maze: Maze, s: Point, e: Point, mn: int, mx: int) -> List[int]:
     distances = collections.defaultdict(lambda: sys.maxsize)
 
     pq = [
@@ -76,19 +80,27 @@ def get_distances(maze: Maze, s: Point, e: Point) -> Dict[Vertex, int]:
 
         p, d, n = old_vert
 
-        for r in RULES[old_vert.d]:
+        if n < mn:
+            rules = [old_vert.d]
+        else:
+            rules = RULES[old_vert.d]
+
+        for r in rules:
             if d == r:
                 u = n + 1
             else:
                 u = 1
 
-            if u > 3:
+            if u > mx:
                 continue
 
             m = MOVES[r]
             q = Point(p.x + m.x, p.y + m.y)
 
             if q not in maze:
+                continue
+
+            if q == e and u < mn:
                 continue
 
             new_vert = Vertex(q, r, u)

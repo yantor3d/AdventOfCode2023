@@ -28,3 +28,22 @@ def test_part_01(puzzle_input):
     answer = advent.day_17.part_01(puzzle_input)
 
     assert answer == 102
+
+
+def test_part_02a(puzzle_input):
+    answer = advent.day_17.part_02(puzzle_input)
+
+    assert answer == 94
+
+
+def test_part_02b():
+    example = [
+        "111111111111",
+        "999999999991",
+        "999999999991",
+        "999999999991",
+        "999999999991",
+    ]
+    answer = advent.day_17.part_02(example)
+
+    assert answer == 71
