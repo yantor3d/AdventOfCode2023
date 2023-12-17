@@ -6,3 +6,6 @@ test.bat
 
 .tox 
 out.txt
+
+__pycache__
+*.pyc
