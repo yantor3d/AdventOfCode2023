@@ -27,13 +27,6 @@ def puzzle_input():
     ]
 
 
-def test_part_01a(puzzle_input):
-    puzzle = advent.day_18.parse(puzzle_input)
-    edge = advent.day_18.dig(puzzle)
-
-    assert len(edge) == 38
-
-
 def test_part_01(puzzle_input):
     answer = advent.day_18.part_01(puzzle_input)
 
@@ -65,7 +58,7 @@ def test_parser_02(line, expected):
     assert actual == expected
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_part_02(puzzle_input):
     answer = advent.day_18.part_02(puzzle_input)
 

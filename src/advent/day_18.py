@@ -27,20 +27,16 @@ def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
     steps = parse(puzzle_input, parse_line_01)
-    edge = dig(steps)
-    hole = cut(edge)
 
-    return len(hole)
+    return dig(steps)
 
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
     steps = parse(puzzle_input, parse_line_02)
-    edge = dig(steps)
-    hole = cut(edge)
 
-    return len(hole)
+    return dig(steps)
 
 
 def parse_line_01(line: str) -> Step:
@@ -64,59 +60,67 @@ def parse(puzzle_input: List[str], parser: callable = parse_line_01) -> List[Ste
     return list(map(parser, puzzle_input))
 
 
-def dig(steps: List[Step]) -> List[Point]:
-    p = Point(0, 0)
+def dig(steps: List[Step]) -> int:
+    s = Point(0, 0)
 
-    result = {p}
+    holes = [s]
 
     for step in steps:
-        m = MOVES[step.d]
+        d = step.d
+        m = MOVES.get(d, Point(0, 0))
+        n = step.n
 
-        for _ in range(step.n):
-            p = p + m
-            result.add(p)
+        p = holes[-1]
+        q = Point(p.x + (m.x * n), p.y + (m.y * n))
 
-    return result
+        if s == q:
+            break
 
+        holes.append(q)
 
-def cut(perimeter: List[Point]) -> List[Point]:
-    result = set(perimeter)
+    edges = []
 
-    x = min(perimeter)
+    for i, b in enumerate(holes):
+        a = holes[i - 1]
 
-    queue = collections.deque()
-    queue.append(x + Point(1, 1))
-    seen = set()
+        try:
+            c = holes[i + 1]
+        except IndexError:
+            c = holes[0]
 
-    while queue:
-        p = queue.popleft()
+        if False:
+            pass
+        elif a.x < b.x and b.y > c.y:  # R -> U
+            e = Point(b.x + 0, b.y + 0)
+        elif a.x < b.x and b.y < c.y:  # R -> D
+            e = Point(b.x + 1, b.y + 0)
+        elif a.y < b.y and c.x < b.x:  # D -> L
+            e = Point(b.x + 1, b.y + 1)
+        elif a.y < b.y and b.x < c.x:  # D -> R
+            e = Point(b.x + 1, b.y + 0)
+        elif a.x > b.x and c.y < b.y:  # L -> U
+            e = Point(b.x + 0, b.y + 1)
+        elif a.x > b.x and b.y < c.y:  # L -> D
+            e = Point(b.x + 1, b.y + 1)
+        elif a.y > b.y and c.x < b.x:  # U -> L
+            e = Point(b.x + 0, b.y + 1)
+        elif a.y > b.y and b.x < c.x:  # U -> R
+            e = Point(b.x + 0, b.y + 0)
+        else:
+            raise RuntimeError(a, b, c)
 
-        if p in seen:
-            continue
+        edges.append(e)
 
-        seen.add(p)
-        result.add(p)
+    a = 0
+    b = 0
 
-        for a in p.adjacent():
-            if p not in perimeter:
-                queue.append(a)
+    for i, p in enumerate(edges):
+        try:
+            q = edges[i + 1]
+        except IndexError:
+            q = edges[0]
 
-    return result
+        a += p.x * q.y
+        b += p.y * q.x
 
-
-def pprint(holes: List[Point]) -> None:
-    xs = [p.x for p in holes]
-    ys = [p.y for p in holes]
-
-    mn = Point(min(xs), min(ys))
-    mx = Point(max(xs), max(ys))
-
-    lines = [
-        ["#" if Point(x, y) in holes else "." for x in range(mn.x, mx.x + 1)]
-        for y in range(mn.y, mx.y + 1)
-    ]
-
-    lines = ["".join(line) for line in lines]
-    lines = "\n".join(lines)
-
-    print(lines)
+    return abs(a - b) // 2
