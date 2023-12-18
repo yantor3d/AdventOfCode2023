@@ -11,6 +11,12 @@ Point = ForwardRef("Point")
 class Point(collections.namedtuple("Point", "x y")):
     """2D point in a grid."""
 
+    def __add__(self, other: Point) -> Point:
+        if not isinstance(other, Point):
+            raise TypeError()
+
+        return Point(self.x + other.x, self.y + other.y)
+
     def adjacent(self) -> Iterator[Point]:
         """Yield the points adjacent to this one in a grid."""
 
