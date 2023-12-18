@@ -2,34 +2,20 @@
 
 from __future__ import annotations
 
-import collections
-import operator
+import functools
 import heapq
 import sys
 
-from frozendict import frozendict
-from queue import PriorityQueue
-from typing import Dict, List, Set, Tuple
-
+from typing import Dict, List, Set
 from advent.datatypes import Point
 
 Maze = Dict[Point, int]
-Graph = Dict[Tuple[Point, str, int], Set[Tuple[Point, str, int]]]
-
-Vertex = collections.namedtuple("Vertex", "p d n")
 
 MOVES = {
     "N": Point(0, -1),
     "S": Point(0, +1),
     "E": Point(+1, 0),
     "W": Point(-1, 0),
-}
-
-RULES = {
-    "N": "NEW",
-    "S": "SEW",
-    "E": "ENS",
-    "W": "WNS",
 }
 
 
@@ -55,65 +41,53 @@ def parse(puzzle_input: List[str]) -> Maze:
     }
 
 
-def run(maze: Maze, mn: int, mx: int) -> Graph:
+def run(maze: Maze, mn: int, mx: int) -> int:
     s = min(maze)
     e = max(maze)
 
-    distances = get_distances(maze, s, e, mn, mx)
-
-    return min(distances or [0])
-
-
-def get_distances(maze: Maze, s: Point, e: Point, mn: int, mx: int) -> List[int]:
-    distances = collections.defaultdict(lambda: sys.maxsize)
+    result = sys.maxsize
+    seen = set()
 
     pq = [
-        (0, Vertex(s, "S", 0)),
-        (0, Vertex(s, "E", 0)),
+        (0, s, MOVES["S"]),
+        (0, s, MOVES["E"]),
     ]
 
     while pq:
-        old_dist, old_vert = heapq.heappop(pq)
+        h, p, d = heapq.heappop(pq)
 
-        if old_dist > distances[old_vert]:
+        if p == e:
+            result = h
+            break
+
+        if (p, d) in seen:
             continue
 
-        p, d, n = old_vert
+        seen.add((p, d))
 
-        if n < mn:
-            rules = [old_vert.d]
-        else:
-            rules = RULES[old_vert.d]
+        for m in moves(d):
+            q, y = p, h
 
-        for r in rules:
-            if d == r:
-                u = n + 1
-            else:
-                u = 1
+            for i in range(1, mx + 1):
+                q = ptoq(q, m)
 
-            if u > mx:
-                continue
+                if q not in maze:
+                    continue
 
-            m = MOVES[r]
-            q = Point(p.x + m.x, p.y + m.y)
+                y += maze[q]
 
-            if q not in maze:
-                continue
-
-            if q == e and u < mn:
-                continue
-
-            new_vert = Vertex(q, r, u)
-            new_dist = old_dist + maze[q]
-
-            if new_dist < distances[new_vert]:
-                distances[new_vert] = new_dist
-                heapq.heappush(pq, (new_dist, new_vert))
-
-    result = []
-
-    for vert, dist in distances.items():
-        if vert.p == e:
-            result.append(dist)
+                if i >= mn and (q, m) not in seen:
+                    heapq.heappush(pq, (y, q, m))
 
     return result
+
+
+@functools.cache
+def moves(d: Point) -> Set[Point]:
+    b = Point(-d.x, -d.y)
+    return set(MOVES.values()) - {d, b}
+
+
+@functools.cache
+def ptoq(p: Point, m: Point) -> Point:
+    return Point(p.x + m.x, p.y + m.y)
