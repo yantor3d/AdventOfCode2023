@@ -6,7 +6,7 @@ import operator
 from typing import List, Set
 from advent.datatypes import Point
 
-Step = collections.namedtuple("Step", "d n color")
+Step = collections.namedtuple("Step", "d n")
 
 MOVES = {
     "U": Point(+0, -1),
@@ -15,11 +15,18 @@ MOVES = {
     "L": Point(-1, +0),
 }
 
+HEX_TO_MOVE = {
+    "0": "R",
+    "1": "D",
+    "2": "L",
+    "3": "U",
+}
+
 
 def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
-    steps = parse(puzzle_input)
+    steps = parse(puzzle_input, parse_line_01)
     edge = dig(steps)
     hole = cut(edge)
 
@@ -29,15 +36,32 @@ def part_01(puzzle_input: List[str]) -> int:
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
+    steps = parse(puzzle_input, parse_line_02)
+    edge = dig(steps)
+    hole = cut(edge)
 
-def parse(puzzle_input: List[str]) -> List[Step]:
-    return list(map(parse_line, puzzle_input))
+    return len(hole)
 
 
-def parse_line(line: str) -> Step:
-    d, n, c = line.split()
+def parse_line_01(line: str) -> Step:
+    d, n, _ = line.split()
 
-    return Step(d, int(n), c[1:-1])
+    return Step(d, int(n))
+
+
+def parse_line_02(line: str) -> Step:
+    _, _, c = line.split()
+
+    nh, dh = c[2:-2], c[-2]
+
+    d = HEX_TO_MOVE[dh]
+    n = int(nh, 16)
+
+    return Step(d, n)
+
+
+def parse(puzzle_input: List[str], parser: callable = parse_line_01) -> List[Step]:
+    return list(map(parser, puzzle_input))
 
 
 def dig(steps: List[Step]) -> List[Point]:
