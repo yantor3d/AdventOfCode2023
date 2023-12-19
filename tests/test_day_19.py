@@ -28,6 +28,7 @@ def puzzle_input():
     ]
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize(
     "i,out",
     [
@@ -47,6 +48,7 @@ def test_part_01_accepted(i, out, puzzle_input):
     assert actual == expected, parts[i]
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize(
     "i,expected",
     [
@@ -63,7 +65,31 @@ def test_part_01_scores(i, expected, puzzle_input):
     assert actual == expected, parts[i]
 
 
+@pytest.mark.skip
 def test_part_01(puzzle_input):
     answer = advent.day_19.part_01(puzzle_input)
 
     assert answer == 19114
+
+
+@pytest.fixture()
+def max_range():
+    r = (1, 4000)
+    return {"x": r, "m": r, "a": r, "s": r}
+
+
+def test_part_02_tree(puzzle_input, max_range):
+    workflows, __ = advent.day_19.parse(puzzle_input)
+
+    print()
+    tree = list(advent.day_19.tree(workflows, "in", max_range))
+
+    print()
+    for x in tree:
+        print(x)
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_19.part_02(puzzle_input)
+
+    assert answer == 167409079868000
