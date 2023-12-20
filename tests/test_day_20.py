@@ -41,7 +41,7 @@ def test_parse(puzzle_input_a):
 def test_example_a(puzzle_input_a):
     modules = advent.day_20.parse(puzzle_input_a)
 
-    lo, hi = advent.day_20.run(modules, verbose=False)
+    lo, hi, __ = advent.day_20.run(modules, verbose=False)
 
     assert (lo * hi) == 32
     assert modules["a"].state is False

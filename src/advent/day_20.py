@@ -72,7 +72,7 @@ def part_01(puzzle_input: List[str]) -> int:
     num_lo, num_hi = 0, 0
 
     for _ in range(1000):
-        lo, hi = run(modules, verbose=False)
+        lo, hi, __ = run(modules, verbose=False)
 
         num_lo += lo
         num_hi += hi
@@ -82,6 +82,19 @@ def part_01(puzzle_input: List[str]) -> int:
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
+
+    modules = parse(puzzle_input)
+
+    n = 0
+
+    while True:
+        n += 1
+        __, __, rx = run(modules, verbose=False)
+
+        if rx:
+            break
+
+    return n
 
 
 def parse(puzzle_input: List[str]) -> Dict[str, Module]:
@@ -138,6 +151,9 @@ def run(modules: Dict[str, Module], verbose: bool = False):
         try:
             module = modules[module_name]
         except KeyError:
+            if module_name == "rx" and old_pulse.value == Pulse.LO.value:
+                result[module_name] = 1
+                break
             continue
 
         new_pulse = module(src, old_pulse)
@@ -148,7 +164,4 @@ def run(modules: Dict[str, Module], verbose: bool = False):
             for dst in module.outputs:
                 queue.append((module_name, dst, new_pulse))
 
-    return (
-        result[Pulse.LO.value],
-        result[Pulse.HI.value],
-    )
+    return (result[Pulse.LO.value], result[Pulse.HI.value], result["rx"])
