@@ -1,7 +1,9 @@
 """Advent of Code 2023, Day 21."""
 
 import collections
+import functools
 import string
+import time
 
 from typing import Dict, List, Iterator, Set, Tuple
 
@@ -11,13 +13,23 @@ from advent.datatypes import Point
 def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
-    s, puzzle = parse(puzzle_input)
-
-    return get_steps(64, s, puzzle)
+    return solve(puzzle_input, 64, inf=False)
 
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
+
+    return solve(puzzle_input, 64, inf=True)
+
+
+def solve(puzzle_input: List[str], num: int, inf: bool = False) -> int:
+    adjacent_fn = adjacent_inf if inf else adjacent_fin
+
+    s, puzzle = parse(puzzle_input)
+    puzzle = Puzzle(puzzle, num, adjacent_fn)
+    result = puzzle.get_steps(num, s)
+
+    return score(result)
 
 
 def parse(puzzle_input: List[str]) -> Tuple[Point, Dict[Point, str]]:
@@ -38,53 +50,105 @@ def parse(puzzle_input: List[str]) -> Tuple[Point, Dict[Point, str]]:
     return s, result
 
 
-def get_steps(
-    num: int,
-    start: Point,
-    puzzle: Dict[Point, str],
-    adjacent_fn: callable = None,
-) -> int:
-    adjacent_fn = adjacent_fn or adjacent_fin
+def edges(mx: Point) -> Iterator[Point]:
+    for x in range(mx.x):
+        yield Point(x, 0)
 
-    mx = max(puzzle)
+    for y in range(1, mx.y):
+        yield Point(0, y)
+        yield Point(mx.x, y)
 
-    old = collections.Counter()
-    old[start, 0] = 0
-
-    for i in range(num):
-        new = collections.Counter(old)
-        for (p, s) in list(old):
-            for q, loop in adjacent_fn(p, mx):
-                if puzzle.get(q) == ".":
-                    new[(q, i + 1)] += 1
-
-        old = {(p, s): n for (p, s), n in new.items() if s == i + 1}
-
-    return len(old)
+    for x in range(mx.x):
+        yield Point(x, mx.y)
 
 
-def adjacent_fin(p: Point, mx: Point) -> Iterator[Tuple[Point, bool]]:
+class Puzzle(object):
+    def __init__(self, puzzle: Dict[Point, str], num: int, adjacent_fn: callable = None):
+        self.puzzle = puzzle
+        self.mx = max(puzzle)
+        self.num = num
+        self.adjacent_fn = adjacent_fn or adjacent_fin
+
+    @functools.cache
+    def get_steps(
+        self, num: int, start: Point, tile: Point = Point(0, 0)
+    ) -> Dict[Point, Set[Point]]:
+        result = collections.defaultdict(set)
+
+        if num == 0:
+            result[tile].add(start)
+            return result
+
+        old = set()
+        old.add(start)
+
+        for i in range(num):
+            new = set()
+
+            for p in list(old):
+                for q, t in self.adjacent_fn(p, self.mx, tile):
+                    if self.puzzle.get(q) != ".":
+                        continue
+
+                    if t == tile:
+                        new.add(q)
+                    else:
+                        recurse = self.get_steps(num - i - 1, q)
+                        recurse = {k + t: v for k, v in recurse.items()}
+
+                        result = merge(result, recurse)
+
+            old = new
+            result[tile] = new
+
+        return result
+
+
+def merge(lhs: Dict[Point, Set[Point]], rhs: Dict[Point, Set[Point]]):
+    result = collections.defaultdict(set)
+
+    for k, v in lhs.items():
+        result[k].update(v)
+
+    for k, v in rhs.items():
+        result[k].update(v)
+
+    return result
+
+
+def score(result: Dict[Point, Set[Point]]):
+    return sum(map(len, result.values()))
+
+
+def adjacent_fin(p: Point, mx: Point, t: Point = Point(0, 0)) -> Iterator[Tuple[Point, Point]]:
     for q in p.adjacent():
-        yield q, False
+        yield q, t
 
 
-def adjacent_inf(p: Point, mx: Point) -> Iterator[Tuple[Point, bool]]:
+@functools.cache
+def adjacent_inf(p: Point, mx: Point, t: Point = Point(0, 0)) -> List[Tuple[Point, Point]]:
+    result = []
+
     for q in p.adjacent():
-        n = True
-
         if q.x < 0:
             q = Point(mx.x, q.y)
+            u = Point(t.x - 1, t.y)
         elif q.y < 0:
             q = Point(q.x, mx.y)
+            u = Point(t.x, t.y - 1)
         elif q.x > mx.x:
             q = Point(0, q.y)
+            u = Point(t.x + 1, t.y)
         elif q.y > mx.y:
             q = Point(q.x, 0)
+            u = Point(t.x, t.y + 1)
         else:
             q = q
-            n = False
+            u = t
 
-        yield q, n
+        result.append((q, u))
+
+    return result
 
 
 def pprint(puzzle: Dict[Point, str], points: Dict[Tuple[Point, int], int], start: Point):
@@ -93,7 +157,7 @@ def pprint(puzzle: Dict[Point, str], points: Dict[Tuple[Point, int], int], start
 
     lines = []
 
-    points = {p: s for (p, s), n in points.items()}
+    points = {p: n for (p, s), n in points.items()}
 
     numbers = string.digits + string.ascii_lowercase + string.ascii_uppercase
 
