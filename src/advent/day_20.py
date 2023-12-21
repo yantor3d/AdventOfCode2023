@@ -1,14 +1,19 @@
 """Advent of Code 2023, Day 20."""
 
 import collections
+import itertools
+import math
 import enum
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
+
+
+START = "broadcaster"
 
 
 class Pulse(enum.Enum):
-    HI = "high"
-    LO = "low"
+    HI = True
+    LO = False
     NO = None
 
 
@@ -19,12 +24,24 @@ class Module(object):
         self.name = name
         self.outputs = outputs
 
+    def __str__(self) -> str:
+        return f"{self.TYPE}{self.name}"
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def reset(self):
+        pass
+
 
 class BroadcasterModule(Module):
     TYPE = "broadcaster"
 
-    def __call__(self, src: str, pulse: Pulse) -> Pulse:
+    def __call__(self, src: str, pulse: Pulse, n: int) -> Pulse:
         return pulse.LO
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class FlipFlopModule(Module):
@@ -35,7 +52,7 @@ class FlipFlopModule(Module):
 
         self.state = False
 
-    def __call__(self, src: str, pulse: Pulse) -> Pulse:
+    def __call__(self, src: str, pulse: Pulse, n: int) -> Pulse:
         if pulse.value == Pulse.HI.value:
             return Pulse.NO
         else:
@@ -50,18 +67,20 @@ class ConjunctionModule(Module):
         super(ConjunctionModule, self).__init__(name, outputs)
 
         self.state = {}
+        self.state_cache = {}
 
-    def __call__(self, src: str, pulse: Pulse) -> Pulse:
+    def __call__(self, src: str, pulse: Pulse, n: int) -> Pulse:
         self.state[src] = pulse.value
 
-        inputs = set(self.state.values())
+        if pulse.value and src not in self.state_cache:
+            self.state_cache[src] = n
 
-        # print(f"    {src} -{pulse.value}-> [{self.name}]: {self.state}")
-
-        if inputs == {Pulse.HI.value}:
-            return Pulse.LO
+        if all(self.state.values()):
+            result = Pulse.LO
         else:
-            return Pulse.HI
+            result = Pulse.HI
+
+        return result
 
 
 def part_01(puzzle_input: List[str]) -> int:
@@ -72,7 +91,7 @@ def part_01(puzzle_input: List[str]) -> int:
     num_lo, num_hi = 0, 0
 
     for _ in range(1000):
-        lo, hi, __ = run(modules, verbose=False)
+        lo, hi = run(modules, verbose=False)
 
         num_lo += lo
         num_hi += hi
@@ -83,18 +102,19 @@ def part_01(puzzle_input: List[str]) -> int:
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
+    end = "rx"
+
     modules = parse(puzzle_input)
 
-    n = 0
+    cycles = []
 
-    while True:
-        n += 1
-        __, __, rx = run(modules, verbose=False)
+    for start in modules[START].outputs:
+        subnet = get_subnet(puzzle_input, start)
 
-        if rx:
-            break
+        cycle = unroll(subnet, end)
+        cycles.append(cycle)
 
-    return n
+    return math.prod(cycles)
 
 
 def parse(puzzle_input: List[str]) -> Dict[str, Module]:
@@ -131,7 +151,7 @@ def parse(puzzle_input: List[str]) -> Dict[str, Module]:
     return result
 
 
-def run(modules: Dict[str, Module], verbose: bool = False):
+def run(modules: Dict[str, Module], n: int = 1, verbose: bool = False):
     result = collections.Counter()
 
     queue = collections.deque()
@@ -151,12 +171,9 @@ def run(modules: Dict[str, Module], verbose: bool = False):
         try:
             module = modules[module_name]
         except KeyError:
-            if module_name == "rx" and old_pulse.value == Pulse.LO.value:
-                result[module_name] = 1
-                break
             continue
 
-        new_pulse = module(src, old_pulse)
+        new_pulse = module(src, old_pulse, n)
 
         if new_pulse.value is None:
             continue
@@ -164,4 +181,48 @@ def run(modules: Dict[str, Module], verbose: bool = False):
             for dst in module.outputs:
                 queue.append((module_name, dst, new_pulse))
 
-    return (result[Pulse.LO.value], result[Pulse.HI.value], result["rx"])
+    return (
+        result[Pulse.LO.value],
+        result[Pulse.HI.value],
+    )
+
+
+def unroll(subnet: Dict[str, Module], end: str) -> int:
+    (join,) = [module for module in subnet.values() if end in module.outputs]
+
+    for i in itertools.count(1):
+        run(subnet, i)
+
+        if any(join.state_cache):
+            break
+
+    return i
+
+
+def get_subnet(puzzle_input, start):
+    modules = parse(puzzle_input)
+
+    seen = {}
+
+    queue = collections.deque([start])
+
+    while queue:
+        node = queue.popleft()
+
+        if node in seen:
+            continue
+
+        seen[node] = None
+
+        try:
+            module = modules[node]
+        except KeyError:
+            pass
+
+        for out in module.outputs:
+            queue.append(out)
+
+    result = {name: module for name, module in modules.items() if name in seen}
+    result[START] = BroadcasterModule(START, [start])
+
+    return result
