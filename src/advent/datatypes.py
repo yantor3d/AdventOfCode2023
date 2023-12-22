@@ -11,6 +11,12 @@ Point = ForwardRef("Point")
 class Point(collections.namedtuple("Point", "x y")):
     """2D point in a grid."""
 
+    def __str__(self) -> str:
+        return f"<{self.x},{self.y}>"
+
+    def __repr__(self) -> str:
+        return str(self)
+
     def __add__(self, other: Point) -> Point:
         if not isinstance(other, Point):
             raise TypeError()
