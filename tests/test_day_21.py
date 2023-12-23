@@ -109,11 +109,9 @@ def xest_adjacent_inf(p, expected):
         # (5000, 16733044),
     ),
 )
-def test_part_02(puzzle_input, n, expected):
+def test_part_02_examples(puzzle_input, n, expected):
     st = time.time()
     actual = advent.day_21.solve(puzzle_input, n)
     et = time.time()
-
-    print(f"Solved {n} steps in {et - st:.3f} seconds - {actual} == {expected}.")
 
     assert actual == expected
