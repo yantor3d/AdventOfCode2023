@@ -65,7 +65,10 @@ def parse(puzzle_input: List[str]) -> Tuple[Dict[Point, str], Point, Point]:
     return result, start, end
 
 
-def get_routes(routes_map: Dict[Point, Dict[Point, int]], start: Point) -> List[int]:
+def get_routes(
+    routes_map: Dict[Point, Dict[Point, int]],
+    start: Point,
+) -> List[int]:
     queue = collections.deque()
     queue.append((start, 0))
 
@@ -86,7 +89,9 @@ def get_routes(routes_map: Dict[Point, Dict[Point, int]], start: Point) -> List[
 
 
 def get_route_map(
-    puzzle: Dict[Point, str], start: Point, end: Point
+    puzzle: Dict[Point, str],
+    start: Point,
+    end: Point,
 ) -> Dict[Point, Dict[Point, int]]:
     result = collections.defaultdict(dict)
 
@@ -98,8 +103,13 @@ def get_route_map(
 
 
 def route_segments(
-    puzzle: Dict[Point, str], d: str, start: Point, end: Point
+    puzzle: Dict[Point, str],
+    d: str,
+    start: Point,
+    end: Point,
+    adjacent: callable = None,
 ) -> List[Tuple[Point, int]]:
+    adjacent = adjacent or adjacent_wet
     result = [start]
 
     while True:
@@ -130,7 +140,25 @@ def as_route(steps: List[Point], turns: List[Point]) -> Route:
     return Route(steps[0], steps[-1], len(steps), list(turns))
 
 
-def adjacent(p: Point, d: str, puzzle: Dict[Point, str]) -> Dict[Point, str]:
+def adjacent_dry(
+    p: Point,
+    d: str,
+    puzzle: Dict[Point, str],
+) -> Dict[Point, str]:
+    result = {}
+    moves = [N, S, E, W]
+
+    for b in moves:
+        m = MOVE[b]
+        q = p + m
+
+        if q in puzzle:
+            result[q] = b
+
+    return result
+
+
+def adjacent_wet(p: Point, d: str, puzzle: Dict[Point, str]) -> Dict[Point, str]:
     result = {}
     moves = MOVES[d]
 
