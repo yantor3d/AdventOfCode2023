@@ -50,13 +50,25 @@ def part_01(puzzle_input: List[str]) -> int:
 
     blocks = parse(puzzle_input)
     blocks = fall(blocks)
-    result = dust(blocks)
+    safe, unsafe = dust(blocks)
 
-    return len(result)
+    return len(safe)
 
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
+
+    blocks = parse(puzzle_input)
+    blocks = fall(blocks)
+    safe, unsafe = dust(blocks)
+
+    n = 0
+
+    for each in unsafe:
+        x = dust_and_fall(blocks, each)
+        n += x
+
+    return n
 
 
 def parse(puzzle_input: List[str]) -> List[Block]:
@@ -141,20 +153,37 @@ def rest(blocks: List[Point]) -> Tuple[Dict[Point, Set]]:
 
 
 def dust(blocks: List[Block]) -> Set[str]:
-    result = set()
+    safe = set()
+    unsafe = set()
 
     above, below = rest(blocks)
 
     for block in blocks:
-        safe = True
         for b in below[block.name]:
             if len(above[b]) == 1:
-                safe = False
+                unsafe.add(block.name)
                 break
-        if safe:
-            result.add(block.name)
+        else:
+            safe.add(block.name)
 
-    return result
+    return safe, unsafe
+
+
+def dust_and_fall(blocks: List[Block], to_dust: str) -> int:
+    old_blocks = [b for b in blocks if b.name != to_dust]
+    new_blocks = fall(old_blocks)
+
+    old_blocks = {b.name: b for b in old_blocks}
+    new_blocks = {b.name: b for b in new_blocks}
+
+    n = 0
+
+    for name, old_block in old_blocks.items():
+        new_block = new_blocks[name]
+
+        n += old_block.score() != new_block.score()
+
+    return n
 
 
 def as_matrix(blocks: List[Block]) -> Matrix:

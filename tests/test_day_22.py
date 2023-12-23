@@ -88,12 +88,35 @@ def test_dust(puzzle_input):
     blocks = advent.day_22.parse(puzzle_input)
     blocks = advent.day_22.fall(blocks)
 
-    result = advent.day_22.dust(blocks)
+    safe, unsafe = advent.day_22.dust(blocks)
 
-    assert result == {"B", "C", "D", "E", "G"}
+    assert safe == {"B", "C", "D", "E", "G"}
+    assert unsafe == {"A", "F"}
 
 
 def test_part_01(puzzle_input):
     answer = advent.day_22.part_01(puzzle_input)
 
     assert answer == 5
+
+
+@pytest.mark.parametrize(
+    "to_dust,expected",
+    (
+        ("A", 6),
+        ("F", 1),
+    ),
+)
+def test_part_02_examples(puzzle_input, to_dust, expected):
+    blocks = advent.day_22.parse(puzzle_input)
+    blocks = advent.day_22.fall(blocks)
+
+    actual = advent.day_22.dust_and_fall(blocks, to_dust)
+
+    assert actual == expected
+
+
+def test_part_02(puzzle_input):
+    answer = advent.day_22.part_02(puzzle_input)
+
+    assert answer == 7
