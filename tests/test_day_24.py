@@ -7,8 +7,6 @@ import advent.day_24
 
 from advent.day_24 import BoundingBox, Vector
 
-INF = float("inf")
-
 
 @pytest.fixture
 def puzzle_input():
@@ -51,7 +49,7 @@ def test_parse(puzzle_input):
         (0, 1, Vector(14.333, 15.333, 0.0)),
         (0, 2, Vector(11.667, 16.667, 0.0)),
         (0, 3, Vector(6.2, 19.4, 0.0)),
-        (1, 2, Vector(INF, INF, INF)),
+        (1, 2, Vector.inf()),
         (1, 3, Vector(-6, -5, 0)),
         (2, 3, Vector(-2, 3, 0)),
     ),
@@ -61,9 +59,30 @@ def test_intersect_01(puzzle_input, a, b, q):
 
     ap, av = particles[a]
     bp, bv = particles[b]
-    p = advent.day_24.intersect_2d(ap, av, bp, bv)
+
+    assert not advent.day_24.is_colinear(ap, av, bp, bv)
+
+    p = advent.day_24.intersect(ap, av, bp, bv)
 
     assert p == q
+
+
+@pytest.mark.parametrize(
+    "ap,av,bp,bv,x",
+    (
+        [
+            Vector(1, 0, 0),
+            Vector(1, 0, 0),
+            Vector(-1, 0, 0),
+            Vector(1, 0, 0),
+            True,
+        ],
+    ),
+)
+def test_is_colinear(ap, av, bp, bv, x):
+    y = advent.day_24.is_colinear(ap, av, bp, bv)
+
+    assert x == y
 
 
 @pytest.mark.parametrize(
@@ -86,33 +105,13 @@ def test_when(puzzle_input, a, b, y):
     ap, av = particles[a]
     bp, bv = particles[b]
 
-    p = advent.day_24.intersect_2d(ap, av, bp, bv)
+    p = advent.day_24.intersect(ap, av, bp, bv)
     x = (
         advent.day_24.intersect_at(ap, av, p),
         advent.day_24.intersect_at(bp, bv, p),
     )
 
     assert x == y
-
-
-# @pytest.mark.parametrize(
-#     'a,x',
-#     (
-#         (0, True),
-#         (1, True),
-#         (2, True),
-#         (3, True),
-#         (4, True),
-#     )
-# )
-# def test_passes_through_01(puzzle_input, a, x, bb01):
-#     particles = advent.day_24.parse(puzzle_input, z=False)
-
-#     ap, av = particles[a]
-
-#     y = advent.day_24.passes_through(ap, av, bb01)
-
-#     assert x == y
 
 
 def test_part_01(puzzle_input, bb01):

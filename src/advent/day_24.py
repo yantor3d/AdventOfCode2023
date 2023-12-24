@@ -67,6 +67,10 @@ class Vector(collections.namedtuple("Vector", "x y z")):
     def inf(cls):
         return cls(INF, INF, INF)
 
+    @classmethod
+    def zero(cls):
+        return cls(0, 0, 0)
+
 
 Particle = Tuple[Vector, Vector]
 
@@ -85,8 +89,6 @@ def part_01(puzzle_input: List[str]) -> int:
         Vector(mx, mx, 0),
     )
 
-    # 31910 too low
-
     return solve(particles, bb)
 
 
@@ -101,20 +103,48 @@ def solve(particles: List[Particle], bb: BoundingBox) -> int:
 
     inf = Vector.inf()
 
-    print()
+    # print()
+
+    results = collections.Counter()
 
     for i, (ap, av) in enumerate(particles):
         for j, (bp, bv) in enumerate(particles[i + 1 :], 1):
-            p = intersect_2d(ap, av, bp, bv)
+            results["total"] += 1
+            p = intersect(ap, av, bp, bv)
 
             if p == inf:
+                results["parallel"] += 1
                 continue
 
             a = intersect_at(ap, av, p)
             b = intersect_at(bp, bv, p)
 
-            if (a, b) == (1, 1) and p in bb:
-                result += 1
+            if (a, b) == (1, 1):
+                if p in bb:
+                    result += 1
+                    results["cross inside"] += 1
+                else:
+                    results["cross outside"] += 1
+            elif (a, b) == (-1, 1):
+                if p in bb:
+                    results["cross inside past (A)"] += 1
+                else:
+                    results["cross outside past (A)"] += 1
+            elif (a, b) == (1, -1):
+                if p in bb:
+                    results["cross inside past (B)"] += 1
+                else:
+                    results["cross outside past (B)"] += 1
+            elif (a, b) == (-1, -1):
+                if p in bb:
+                    results["cross inside past"] += 1
+                else:
+                    results["cross outside past"] += 1
+            else:
+                results["unknown"] += 1
+
+    # import pprint
+    # pprint.pprint(results)
 
     return result
 
@@ -160,7 +190,6 @@ def intersect_at(p: Vector, v: Vector, x: Vector) -> int:
 
     v = normalize(v)
     n = normalize(x - p)
-    u = Vector(-n.x, -n.y, -n.z)
 
     d = numpy.dot(v, n)
 
@@ -173,21 +202,31 @@ def intersect_at(p: Vector, v: Vector, x: Vector) -> int:
     raise ValueError(p, v, x)
 
 
-def intersect_2d(ap: Vector, av: Vector, bp: Vector, bv: Vector) -> Vector:
-    a1 = (ap.x, ap.y)
-    a2 = (ap.x + av.x, ap.y + av.y)
+def is_colinear(ap: Vector, av: Vector, bp: Vector, bv: Vector) -> bool:
+    result = False
 
-    b1 = (bp.x, bp.y)
-    b2 = (bp.x + bv.x, bp.y + bv.y)
+    if Vector(*numpy.cross(av, bv)) == Vector.zero():
+        ab = normalize(ap - bp)
+        ba = normalize(bp - ap)
 
-    # shamelessly 'borrowed' from StackOverflow
-    s = numpy.vstack([a1, a2, b1, b2])  # s for stacked
-    h = numpy.hstack((s, numpy.ones((4, 1))))  # h for homogeneous
-    l1 = numpy.cross(h[0], h[1])  # get first line
-    l2 = numpy.cross(h[2], h[3])  # get second line
-    x, y, z = numpy.cross(l1, l2)  # point of intersection
+        an = normalize(av)
+        bn = normalize(bv)
 
-    if z == 0:  # lines are parallel
-        return Vector(float("inf"), float("inf"), float("inf"))
+        return ab == an or ab == bn or ba == an or ba == bn
+
+    return result
+
+
+def intersect(ap: Vector, av: Vector, bp: Vector, bv: Vector) -> Vector:
+    v1 = numpy.array(av).T
+    c1 = numpy.array(ap).T
+    v2 = numpy.array(bv).T
+    c2 = numpy.array(bp).T
+
+    # in this case the solved x is [-1.  1.], error is 0, and rank is 2
+    x, err, rank = numpy.linalg.lstsq(numpy.array([v1, -v2]).T, c2 - c1, rcond=None)[:3]
+    if rank == 2:
+        # intersection exists
+        return Vector(*(v1 * x[0] + c1))
     else:
-        return Vector(x / z, y / z, 0.0)
+        return Vector.inf()
