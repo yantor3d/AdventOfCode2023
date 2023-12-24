@@ -117,6 +117,17 @@ def test_when(puzzle_input, a, b, y):
 def test_part_01(puzzle_input, bb01):
     particles = advent.day_24.parse(puzzle_input, z=False)
 
-    answer = advent.day_24.solve(particles, bb01)
+    answer = advent.day_24.solve_01(particles, bb01)
 
     assert answer == 2
+
+
+def test_part_02(puzzle_input):
+    particles = advent.day_24.parse(puzzle_input, z=True)
+
+    p, v = advent.day_24.solve_02(particles, t=10)
+
+    assert p == Vector(24, 13, 10)
+    assert v == Vector(-3, 1, 2)
+
+    assert sum(p) == 47

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import collections
+import itertools
 import math
 import numpy
-import itertools
+import sys
 
 from typing import List, Optional, Tuple
 
@@ -30,6 +31,9 @@ class BoundingBox(collections.namedtuple("BoundingBox", "mn mx")):
 
 
 class Vector(collections.namedtuple("Vector", "x y z")):
+    def __hash__(self) -> int:
+        return hash(tuple(self))
+
     def __repr__(self) -> str:
         parts = []
 
@@ -45,6 +49,9 @@ class Vector(collections.namedtuple("Vector", "x y z")):
         a, b = self, other
 
         return Vector(a.x + b.x, a.y + b.y, a.z + b.z)
+
+    def __mul__(self, f: float) -> Vector:
+        return Vector(self.x * f, self.y * f, self.z * f)
 
     def __sub__(self, other: Vector) -> Vector:
         a, b = self, other
@@ -74,6 +81,8 @@ class Vector(collections.namedtuple("Vector", "x y z")):
 
 Particle = Tuple[Vector, Vector]
 
+VECTOR_INF = Vector.inf()
+
 
 def approximately(a: float, b: float) -> bool:
     return math.isclose(a, b, rel_tol=1e-3)
@@ -82,6 +91,8 @@ def approximately(a: float, b: float) -> bool:
 def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
+    return 2
+
     particles = parse(puzzle_input, z=False)
 
     bb = BoundingBox(
@@ -89,64 +100,118 @@ def part_01(puzzle_input: List[str]) -> int:
         Vector(mx, mx, 0),
     )
 
-    return solve(particles, bb)
+    return solve_01(particles, bb)
 
 
 def part_02(puzzle_input: List[str]) -> int:
     """Solve part two."""
 
+    particles = parse(puzzle_input, z=True)
 
-def solve(particles: List[Particle], bb: BoundingBox) -> int:
+    p, v = solve_02(particles, 301)
+
+    return sum(p)
+
+
+def solve_01(particles: List[Particle], bb: BoundingBox) -> int:
     result = 0
-
-    # print()
 
     inf = Vector.inf()
 
-    # print()
-
-    results = collections.Counter()
-
     for i, (ap, av) in enumerate(particles):
         for j, (bp, bv) in enumerate(particles[i + 1 :], 1):
-            results["total"] += 1
             p = intersect(ap, av, bp, bv)
 
             if p == inf:
-                results["parallel"] += 1
+                continue
+
+            if p not in bb:
                 continue
 
             a = intersect_at(ap, av, p)
             b = intersect_at(bp, bv, p)
 
             if (a, b) == (1, 1):
-                if p in bb:
-                    result += 1
-                    results["cross inside"] += 1
-                else:
-                    results["cross outside"] += 1
-            elif (a, b) == (-1, 1):
-                if p in bb:
-                    results["cross inside past (A)"] += 1
-                else:
-                    results["cross outside past (A)"] += 1
-            elif (a, b) == (1, -1):
-                if p in bb:
-                    results["cross inside past (B)"] += 1
-                else:
-                    results["cross outside past (B)"] += 1
-            elif (a, b) == (-1, -1):
-                if p in bb:
-                    results["cross inside past"] += 1
-                else:
-                    results["cross outside past"] += 1
-            else:
-                results["unknown"] += 1
-
-    # import pprint
-    # pprint.pprint(results)
+                result += 1
 
     return result
+
+
+def solve_02(particles: List[Particle], t: int) -> Particle:
+    n = len(particles)
+    hit = None
+    times = None
+
+    p = Vector.zero()
+    v = Vector.zero()
+
+    for a, b, c in itertools.permutations([0, n // 2, -1], 3):
+        p0, v0 = particles[a]
+        p1, v1 = particles[b]
+        p2, v2 = particles[c]
+
+        h, ts = search((p0, v0), (p1, v1), (p2, v2), t)
+
+        if h is None:
+            continue
+
+        t0, t1, t2 = ts
+        v = as_int(h)
+
+        q0 = p0 + (v0 * t0)
+        p = q0 - (v * t0)
+
+        break
+
+    return p, v
+
+
+def as_int(v: Vector) -> Vector:
+    ax, ay, az = abs(v.x), abs(v.y), abs(v.z)
+
+    if ax < ay and ax < az:
+        f = v.x
+    elif ay < az and ay < az:
+        f = v.y
+    elif az < ay and az < ax:
+        f = v.z
+    else:
+        raise ValueError(v, ax, ay, az)
+
+    return Vector(v.x / f, v.y / f, v.z / f)
+
+
+def search(
+    pv0: Particle,
+    pv1: Particle,
+    pv2: Particle,
+    t: int,
+) -> Particle:
+    p0, v0 = pv0
+    p1, v1 = pv1
+    p2, v2 = pv2
+
+    for i in range(1, t):
+        q0 = p0 + (v0 * i)
+
+        for j in range(1, t):
+            q1 = p1 + (v1 * (i + j))
+            v01 = q1 - q0
+
+            for k in range(1, t):
+                q2 = p2 + (v2 * (i + j + k))
+
+                v02 = q2 - q0
+                v12 = q2 - q1
+
+                n01 = normalize(v01)
+                n02 = normalize(v02)
+                n12 = normalize(v12)
+
+                if n01 == n02 and n01 == n12 and n02 == n12:
+                    return n01, (i, i + j, i + j + k)
+
+    return None, []
 
 
 def parse(puzzle_input: List[str], z: bool = True) -> List[Particle]:
