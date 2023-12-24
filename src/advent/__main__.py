@@ -37,7 +37,8 @@ def main():
 
         try:
             module = importlib.import_module(day_name, advent)
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as exc:
+            print(str(exc))
             break
 
         print(f"\nDay {day:02d}")
