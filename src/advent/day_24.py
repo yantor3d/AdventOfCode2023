@@ -9,6 +9,7 @@ import numpy
 import sys
 
 from typing import List, Optional, Tuple
+from z3 import *
 
 INF = float("inf")
 
@@ -91,8 +92,6 @@ def approximately(a: float, b: float) -> bool:
 def part_01(puzzle_input: List[str]) -> int:
     """Solve part one."""
 
-    return 2
-
     particles = parse(puzzle_input, z=False)
 
     bb = BoundingBox(
@@ -108,7 +107,7 @@ def part_02(puzzle_input: List[str]) -> int:
 
     particles = parse(puzzle_input, z=True)
 
-    p, v = solve_02(particles, 301)
+    p, v = solve_02(particles)
 
     return sum(p)
 
@@ -137,31 +136,46 @@ def solve_01(particles: List[Particle], bb: BoundingBox) -> int:
     return result
 
 
-def solve_02(particles: List[Particle], t: int) -> Particle:
+def solve_02(particles: List[Particle]) -> Particle:
     n = len(particles)
-    hit = None
-    times = None
 
-    p = Vector.zero()
-    v = Vector.zero()
+    p0, v0 = particles[0]
+    p1, v1 = particles[n // 2]
+    p2, v2 = particles[-1]
 
-    for a, b, c in itertools.permutations([0, n // 2, -1], 3):
-        p0, v0 = particles[a]
-        p1, v1 = particles[b]
-        p2, v2 = particles[c]
+    px, py, pz = Reals("px py pz")
+    vx, vy, vz = Reals("vx vy vz")
+    t0, t1, t2 = Reals("t0 t1 t2")
+    answer = Real("answer")
 
-        h, ts = search((p0, v0), (p1, v1), (p2, v2), t)
+    solver = Solver()
+    solver.add(
+        px + t0 * vx == p0.x + t0 * v0.x,
+        py + t0 * vy == p0.y + t0 * v0.y,
+        pz + t0 * vz == p0.z + t0 * v0.z,
+        px + t1 * vx == p1.x + t1 * v1.x,
+        py + t1 * vy == p1.y + t1 * v1.y,
+        pz + t1 * vz == p1.z + t1 * v1.z,
+        px + t2 * vx == p2.x + t2 * v2.x,
+        py + t2 * vy == p2.y + t2 * v2.y,
+        pz + t2 * vz == p2.z + t2 * v2.z,
+        answer == px + py + pz,
+    )
 
-        if h is None:
-            continue
+    solver.check()
+    m = solver.model()
 
-        t0, t1, t2 = ts
-        v = as_int(h)
+    p = Vector(
+        m[px].as_long(),
+        m[py].as_long(),
+        m[pz].as_long(),
+    )
 
-        q0 = p0 + (v0 * t0)
-        p = q0 - (v * t0)
-
-        break
+    v = Vector(
+        m[vx].as_long(),
+        m[vy].as_long(),
+        m[vz].as_long(),
+    )
 
     return p, v
 
@@ -179,39 +193,6 @@ def as_int(v: Vector) -> Vector:
         raise ValueError(v, ax, ay, az)
 
     return Vector(v.x / f, v.y / f, v.z / f)
-
-
-def search(
-    pv0: Particle,
-    pv1: Particle,
-    pv2: Particle,
-    t: int,
-) -> Particle:
-    p0, v0 = pv0
-    p1, v1 = pv1
-    p2, v2 = pv2
-
-    for i in range(1, t):
-        q0 = p0 + (v0 * i)
-
-        for j in range(1, t):
-            q1 = p1 + (v1 * (i + j))
-            v01 = q1 - q0
-
-            for k in range(1, t):
-                q2 = p2 + (v2 * (i + j + k))
-
-                v02 = q2 - q0
-                v12 = q2 - q1
-
-                n01 = normalize(v01)
-                n02 = normalize(v02)
-                n12 = normalize(v12)
-
-                if n01 == n02 and n01 == n12 and n02 == n12:
-                    return n01, (i, i + j, i + j + k)
-
-    return None, []
 
 
 def parse(puzzle_input: List[str], z: bool = True) -> List[Particle]:

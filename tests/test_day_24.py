@@ -125,7 +125,7 @@ def test_part_01(puzzle_input, bb01):
 def test_part_02(puzzle_input):
     particles = advent.day_24.parse(puzzle_input, z=True)
 
-    p, v = advent.day_24.solve_02(particles, t=10)
+    p, v = advent.day_24.solve_02(particles)
 
     assert p == Vector(24, 13, 10)
     assert v == Vector(-3, 1, 2)
